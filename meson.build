@@ -16,7 +16,19 @@ conf.set('SLIRP_MAJOR_VERSION', major_version)
 conf.set('SLIRP_MINOR_VERSION', minor_version)
 conf.set('SLIRP_MICRO_VERSION', micro_version)
 
+want_ossfuzz = get_option('oss-fuzz')
+want_libfuzzer = get_option('llvm-fuzz')
+if want_ossfuzz and want_libfuzzer
+  error('only one of oss-fuzz and llvm-fuzz can be specified')
+endif
+fuzzer_build = want_ossfuzz or want_libfuzzer
+
 cc = meson.get_compiler('c')
+add_languages('cpp', required : fuzzer_build)
+
+if get_option('static') == true
+  add_global_arguments('-static', language : 'c')
+endif
 
 if cc.get_argument_syntax() != 'msvc'
   r = run_command('build-aux/git-version-gen',
@@ -59,7 +71,7 @@ lt_version = '@0@.@1@.@2@'.format(lt_current - lt_age, lt_age, lt_revision)
 
 host_system = host_machine.system()
 
-glib_dep = dependency('glib-2.0')
+glib_dep = dependency('glib-2.0', static : get_option('static'))
 
 add_project_arguments(cc.get_supported_arguments('-Wmissing-prototypes', '-Wstrict-prototypes',
                                                  '-Wredundant-decls', '-Wundef', '-Wwrite-strings'),
@@ -187,7 +199,11 @@ else
   if get_option('default_library') == 'both'
     lib = lib.get_static_lib()
   endif
-  libslirp_dep = declare_dependency(
-    include_directories: include_directories('.', 'src'),
-    link_with: lib)
 endif
+
+libslirp_dep = declare_dependency(
+  link_with : lib,
+  include_directories : [include_directories('src'), include_directories('.')],
+)
+
+subdir('fuzzing')

@@ -1,2 +1,11 @@
 option('version_suffix', type: 'string', value: '',
        description: 'Suffix to append to SLIRP_VERSION_STRING')
+
+option('oss-fuzz', type : 'boolean', value : 'false',
+       description : 'build against oss-fuzz')
+
+option('llvm-fuzz', type : 'boolean', value : 'false',
+       description : 'build against LLVM libFuzzer')
+
+option('static', type : 'boolean', value : 'false',
+       description : 'build static binary')
