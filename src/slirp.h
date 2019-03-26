@@ -280,11 +280,8 @@ void ip_slowtimo(Slirp *);
 /*
  * Strip out IP options, at higher
  * level protocol in the kernel.
- * Second argument is buffer to which options
- * will be moved, and return value is their length.
- * (XXX) should be deleted; last arg currently ignored.
  */
-void ip_stripoptions(register struct mbuf *, struct mbuf *);
+void ip_stripoptions(register struct mbuf *);
 
 /* ip_output.c */
 /* Send IPv4 packet to the guest */

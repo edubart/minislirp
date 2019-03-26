@@ -89,7 +89,7 @@ void udp_input(register struct mbuf *m, int iphlen)
      * with options still present.
      */
     if (iphlen > sizeof(struct ip)) {
-        ip_stripoptions(m, (struct mbuf *)0);
+        ip_stripoptions(m);
         iphlen = sizeof(struct ip);
     }
 
