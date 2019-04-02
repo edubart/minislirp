@@ -50,30 +50,10 @@
 /*
  * Insert segment ti into reassembly queue of tcp with
  * control block tp.  Return TH_FIN if reassembly now includes
- * a segment with FIN.  The macro form does the common case inline
- * (segment is the next to be received on an established connection,
- * and the queue is empty), avoiding linkage into and removal
- * from the queue and repetition of various conversions.
+ * a segment with FIN.
  * Set DELACK for segments received in order, but ack immediately
  * when segments are out of order (so fast retransmit can work).
  */
-#define TCP_REASS(tp, ti, m, so, flags)                                \
-    {                                                                  \
-        if ((ti)->ti_seq == (tp)->rcv_nxt && tcpfrag_list_empty(tp) && \
-            (tp)->t_state == TCPS_ESTABLISHED) {                       \
-            tp->t_flags |= TF_DELACK;                                  \
-            (tp)->rcv_nxt += (ti)->ti_len;                             \
-            flags = (ti)->ti_flags & TH_FIN;                           \
-            if (so->so_emu) {                                          \
-                if (tcp_emu((so), (m)))                                \
-                    sbappend(so, (m));                                 \
-            } else                                                     \
-                sbappend((so), (m));                                   \
-        } else {                                                       \
-            (flags) = tcp_reass((tp), (ti), (m));                      \
-            tp->t_flags |= TF_ACKNOW;                                  \
-        }                                                              \
-    }
 
 static void tcp_dooptions(struct tcpcb *tp, uint8_t *cp, int cnt,
                           struct tcpiphdr *ti);
@@ -1274,7 +1254,27 @@ dodata:
      */
     if ((ti->ti_len || (tiflags & TH_FIN)) &&
         TCPS_HAVERCVDFIN(tp->t_state) == 0) {
-        TCP_REASS(tp, ti, m, so, tiflags);
+
+        /*
+         * segment is the next to be received on an established
+         * connection, and the queue is empty, avoid linkage into and
+         * removal from the queue and repetition of various
+         * conversions from tcp_reass().
+         */
+        if (ti->ti_seq == tp->rcv_nxt && tcpfrag_list_empty(tp) &&
+            tp->t_state == TCPS_ESTABLISHED) {
+            tp->t_flags |= TF_DELACK;
+            tp->rcv_nxt += ti->ti_len;
+            tiflags = ti->ti_flags & TH_FIN;
+            if (so->so_emu) {
+                if (tcp_emu(so, m))
+                    sbappend(so, m);
+            } else
+                sbappend(so, m);
+        } else {
+            tiflags = tcp_reass(tp, ti, m);
+            tp->t_flags |= TF_ACKNOW;
+        }
     } else {
         m_free(m);
         tiflags &= ~TH_FIN;
