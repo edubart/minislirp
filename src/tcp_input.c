@@ -741,6 +741,13 @@ findso:
      *	continue processing rest of data/controls, beginning with URG
      */
     case TCPS_SYN_SENT:
+        if (getenv("SLIRP_FUZZING") &&
+            /* Align seq numbers on what the fuzzing trace says */
+            tp->iss == 1 && ti->ti_ack != 0) {
+            tp->iss = ti->ti_ack - 1;
+            tp->snd_max = tp->iss + 1;
+        }
+
         if ((tiflags & TH_ACK) &&
             (SEQ_LEQ(ti->ti_ack, tp->iss) || SEQ_GT(ti->ti_ack, tp->snd_max)))
             goto dropwithreset;
@@ -941,6 +948,13 @@ findso:
      * send an RST.  una<=ack<=max
      */
     case TCPS_SYN_RECEIVED:
+        if (getenv("SLIRP_FUZZING") &&
+            /* Align seq numbers on what the fuzzing trace says */
+            tp->iss == 1 && ti->ti_ack != 0) {
+            tp->iss = ti->ti_ack - 1;
+            tp->snd_max = tp->iss + 1;
+            tp->snd_una = ti->ti_ack;
+        }
 
         if (SEQ_GT(tp->snd_una, ti->ti_ack) || SEQ_GT(ti->ti_ack, tp->snd_max))
             goto dropwithreset;

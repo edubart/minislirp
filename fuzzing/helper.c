@@ -205,6 +205,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         return 0;
     }
 
+    setenv("SLIRP_FUZZING", "1", 0);
+
     fuzz_set_logging_func();
 
     ret = inet_pton(AF_INET6, "fec0::", &ip6_prefix);
