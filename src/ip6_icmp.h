@@ -59,7 +59,7 @@ struct ndp_na { /* Neighbor Advertisement Message */
     uint8_t R : 1, /* Router Flag */
         S : 1, /* Solicited Flag */
         O : 1, /* Override Flag */
-        reserved_1 : 5
+        reserved_1 : 5;
 #else
     uint8_t reserved_1 : 5, O : 1, S : 1, R : 1;
 #endif
