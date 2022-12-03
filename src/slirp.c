@@ -389,6 +389,48 @@ static int get_dns_addr_cached(void *pdns_addr, void *cached_addr,
     return 1;
 }
 
+static bool try_and_setdns_server(int af, unsigned found, unsigned if_index,
+	const char *buff2, void *pdns_addr, void *cached_addr,
+	socklen_t addrlen, uint32_t *scope_id, uint32_t *cached_scope_id,
+	unsigned *cached_time)
+{
+    union {
+        struct in_addr dns_addr;
+        struct in6_addr dns6_addr;
+    } tmp_addr;
+
+    assert(sizeof(tmp_addr) >= addrlen);
+
+    if (!inet_pton(af, buff2, &tmp_addr))
+	return false;
+
+    /* If it's the first one, set it to dns_addr */
+    if (!found) {
+	memcpy(pdns_addr, &tmp_addr, addrlen);
+	memcpy(cached_addr, &tmp_addr, addrlen);
+	if (scope_id) {
+	    *scope_id = if_index;
+	}
+	if (cached_scope_id) {
+	    *cached_scope_id = if_index;
+	}
+	*cached_time = curtime;
+    }
+
+    if (found > 2) {
+	DEBUG_MISC("  (more)");
+    } else if (slirp_debug & DBG_MISC) {
+	char s[INET6_ADDRSTRLEN];
+	const char *res = inet_ntop(af, &tmp_addr, s, sizeof(s));
+	if (!res) {
+	    res = "  (string conversion error)";
+	}
+	DEBUG_MISC("  %s", res);
+    }
+
+    return true;
+}
+
 static int get_dns_addr_resolv_conf(int af, void *pdns_addr, void *cached_addr,
                                     socklen_t addrlen,
                                     uint32_t *scope_id, uint32_t *cached_scope_id,
@@ -398,13 +440,9 @@ static int get_dns_addr_resolv_conf(int af, void *pdns_addr, void *cached_addr,
     char buff2[257];
     FILE *f;
     int found = 0;
-    union {
-        struct in_addr dns_addr;
-        struct in6_addr dns6_addr;
-    } tmp_addr;
     unsigned if_index;
+    unsigned nameservers = 0;
 
-    assert(sizeof(tmp_addr) >= addrlen);
     f = fopen(RESOLV_CONF_PATH, "r");
     if (!f)
         return -1;
@@ -420,39 +458,30 @@ static int get_dns_addr_resolv_conf(int af, void *pdns_addr, void *cached_addr,
                 if_index = 0;
             }
 
-            if (!inet_pton(af, buff2, &tmp_addr)) {
-                continue;
-            }
-            /* If it's the first one, set it to dns_addr */
-            if (!found) {
-                memcpy(pdns_addr, &tmp_addr, addrlen);
-                memcpy(cached_addr, &tmp_addr, addrlen);
-                if (scope_id) {
-                    *scope_id = if_index;
-                }
-                if (cached_scope_id) {
-                    *cached_scope_id = if_index;
-                }
-                *cached_time = curtime;
-            }
+	    nameservers++;
 
-            if (++found > 3) {
-                DEBUG_MISC("  (more)");
-                break;
-            } else if (slirp_debug & DBG_MISC) {
-                char s[INET6_ADDRSTRLEN];
-                const char *res = inet_ntop(af, &tmp_addr, s, sizeof(s));
-                if (!res) {
-                    res = "  (string conversion error)";
-                }
-                DEBUG_MISC("  %s", res);
-            }
+	    if (!try_and_setdns_server(af, found, if_index, buff2, pdns_addr,
+				    cached_addr, addrlen, scope_id,
+				    cached_scope_id, cached_time))
+		    continue;
+
+	    if (++found > 3)
+		break;
         }
     }
     fclose(f);
-    if (!found)
+    if (nameservers && !found)
         return -1;
-    return 0;
+    if (!nameservers) {
+	found += try_and_setdns_server(af, found, 0, "127.0.0.1",
+			pdns_addr, cached_addr, addrlen, scope_id,
+			cached_scope_id, cached_time);
+	found += try_and_setdns_server(af, found, 0, "::1",
+			pdns_addr, cached_addr, addrlen, scope_id,
+			cached_scope_id, cached_time);
+    }
+
+    return found ? 0 : -1;
 }
 
 int get_dns_addr(struct in_addr *pdns_addr)
