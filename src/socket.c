@@ -633,39 +633,47 @@ void sorecvfrom(struct socket *so)
                             &addrlen);
         DEBUG_MISC(" did recvfrom %d, errno = %d-%s", m->m_len, errno,
                    strerror(errno));
-        if (m->m_len < 0) {
-            /* Report error as ICMP */
-            switch (so->so_lfamily) {
-                uint8_t code;
-            case AF_INET:
-                code = ICMP_UNREACH_PORT;
+        if (m->m_len < 0) {    	
+            if (errno == ENOTCONN) {
+                /*
+                 * UDP socket got burnt, e.g. by suspend on iOS. Tear it down
+                 * and let it get re-created if the guest still needs it
+                 */
+                udp_detach(so);
+            } else {
+                /* Report error as ICMP */
+                switch (so->so_lfamily) {
+                    uint8_t code;
+                case AF_INET:
+                    code = ICMP_UNREACH_PORT;
 
-                if (errno == EHOSTUNREACH) {
-                    code = ICMP_UNREACH_HOST;
-                } else if (errno == ENETUNREACH) {
-                    code = ICMP_UNREACH_NET;
+                    if (errno == EHOSTUNREACH) {
+                        code = ICMP_UNREACH_HOST;
+                    } else if (errno == ENETUNREACH) {
+                        code = ICMP_UNREACH_NET;
+                    }
+
+                    DEBUG_MISC(" rx error, tx icmp ICMP_UNREACH:%i", code);
+                    icmp_send_error(so->so_m, ICMP_UNREACH, code, 0,
+                                    strerror(errno));
+                    break;
+                case AF_INET6:
+                    code = ICMP6_UNREACH_PORT;
+
+                    if (errno == EHOSTUNREACH) {
+                        code = ICMP6_UNREACH_ADDRESS;
+                    } else if (errno == ENETUNREACH) {
+                        code = ICMP6_UNREACH_NO_ROUTE;
+                    }
+
+                    DEBUG_MISC(" rx error, tx icmp6 ICMP_UNREACH:%i", code);
+                    icmp6_send_error(so->so_m, ICMP6_UNREACH, code);
+                    break;
+                default:
+                    g_assert_not_reached();
                 }
-
-                DEBUG_MISC(" rx error, tx icmp ICMP_UNREACH:%i", code);
-                icmp_send_error(so->so_m, ICMP_UNREACH, code, 0,
-                                strerror(errno));
-                break;
-            case AF_INET6:
-                code = ICMP6_UNREACH_PORT;
-
-                if (errno == EHOSTUNREACH) {
-                    code = ICMP6_UNREACH_ADDRESS;
-                } else if (errno == ENETUNREACH) {
-                    code = ICMP6_UNREACH_NO_ROUTE;
-                }
-
-                DEBUG_MISC(" rx error, tx icmp6 ICMP_UNREACH:%i", code);
-                icmp6_send_error(so->so_m, ICMP6_UNREACH, code);
-                break;
-            default:
-                g_assert_not_reached();
+                m_free(m);
             }
-            m_free(m);
         } else {
             /*
              * Hack: domain name lookup will be used the most for UDP,
