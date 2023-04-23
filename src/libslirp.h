@@ -10,7 +10,8 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <in6addr.h>
-typedef int slirp_ssize_t;
+#include <BaseTsd.h>
+typedef SSIZE_T slirp_ssize_t;
 #ifdef BUILDING_LIBSLIRP
 # define SLIRP_EXPORT __declspec(dllexport)
 #else
