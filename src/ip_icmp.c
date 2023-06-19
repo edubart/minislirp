@@ -34,6 +34,8 @@
 #include "slirp.h"
 #include "ip_icmp.h"
 
+#include <sys/param.h>
+
 #ifndef WITH_ICMP_ERROR_MSG
 #define WITH_ICMP_ERROR_MSG 0
 #endif
@@ -100,7 +102,7 @@ static int icmp_send(struct socket *so, struct mbuf *m, int hlen)
      * isn't possible to detect this difference at runtime, so we must use an
      * #ifdef to determine if we need to remove the IP header.
      */
-#ifdef CONFIG_BSD
+#if defined(BSD) && !defined(__GNU__)
     so->so_type = IPPROTO_IP;
 #else
     so->so_type = IPPROTO_ICMP;
