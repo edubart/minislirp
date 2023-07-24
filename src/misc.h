@@ -51,22 +51,37 @@ struct slirp_quehead {
     struct slirp_quehead *qh_rlink;
 };
 
-void slirp_insque(void *, void *);
-void slirp_remque(void *);
+/* Insert element a into queue b */
+void slirp_insque(void *a, void *b);
+
+/* Remove element a from its queue */
+void slirp_remque(void *a);
+
+/* Run the given command in the background, and expose its output as a socket */
 int fork_exec(struct socket *so, const char *ex);
+
+/* Create a Unix socket, and expose it as a socket */
 int open_unix(struct socket *so, const char *unixsock);
 
+/* Add a guest forward on the given address and port, with guest data being
+ * forwarded by calling write_cb */
 struct gfwd_list *add_guestfwd(struct gfwd_list **ex_ptr, SlirpWriteCb write_cb,
                                void *opaque, struct in_addr addr, int port);
 
+/* Run the given command in the backaground, and send its output to the guest on
+ * the given address and port */
 struct gfwd_list *add_exec(struct gfwd_list **ex_ptr, const char *cmdline,
                            struct in_addr addr, int port);
 
+/* Create a Unix socket, and expose it to the guest on the given address and
+ * port */
 struct gfwd_list *add_unix(struct gfwd_list **ex_ptr, const char *unixsock,
                            struct in_addr addr, int port);
 
+/* Remove the guest forward bound to the given address and port */
 int remove_guestfwd(struct gfwd_list **ex_ptr, struct in_addr addr, int port);
 
+/* Bind the socket to the outbound address specified in the slirp configuration */
 int slirp_bind_outbound(struct socket *so, unsigned short af);
 
 #endif

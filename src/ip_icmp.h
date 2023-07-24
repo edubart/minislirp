@@ -154,15 +154,30 @@ struct icmp {
      (type) == ICMP_IREQ || (type) == ICMP_IREQREPLY ||             \
      (type) == ICMP_MASKREQ || (type) == ICMP_MASKREPLY)
 
+/* Called from slirp_new */
 void icmp_init(Slirp *slirp);
+
+/* Called from slirp_cleanup */
 void icmp_cleanup(Slirp *slirp);
+
+/* Process an ICMP packet from the guest */
 void icmp_input(struct mbuf *, int);
+
+/* Send an ICMP error related to the given packet, using the given ICMP type and code, appending the given message (if enabled at compilation), and using the given source. If minsize is sent, send only header + 8B of the given packet, otherwise send it all */
 void icmp_forward_error(struct mbuf *msrc, uint8_t type, uint8_t code, int minsize,
                         const char *message, struct in_addr *src);
+
+/* Similar to icmp_forward_error, but use the virtual host address as source */
 void icmp_send_error(struct mbuf *msrc, uint8_t type, uint8_t code, int minsize,
                      const char *message);
+
+/* Forward the ICMP packet to the guest (probably a ping reply) */
 void icmp_reflect(struct mbuf *);
+
+/* Handle ICMP data from the ICMP socket, and forward it to the guest (using so_m as reference) */
 void icmp_receive(struct socket *so);
+
+/* Forget about this pending ICMP request */
 void icmp_detach(struct socket *so);
 
 #endif

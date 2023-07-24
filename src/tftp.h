@@ -55,6 +55,7 @@ struct tftp_session {
     int timestamp;
 };
 
+/* Process TFTP packet coming from the guest */
 void tftp_input(struct sockaddr_storage *srcsas, struct mbuf *m);
 
 #endif

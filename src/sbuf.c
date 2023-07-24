@@ -39,12 +39,6 @@ void sbreserve(struct sbuf *sb, size_t size)
     sb->sb_datalen = size;
 }
 
-/*
- * Try and write() to the socket, whatever doesn't get written
- * append to the buffer... for a host with a fast net connection,
- * this prevents an unnecessary copy of the data
- * (the socket is non-blocking, so we won't hang)
- */
 void sbappend(struct socket *so, struct mbuf *m)
 {
     int ret = 0;
@@ -138,11 +132,6 @@ static void sbappendsb(struct sbuf *sb, struct mbuf *m)
         sb->sb_wptr -= sb->sb_datalen;
 }
 
-/*
- * Copy data from sbuf to a normal, straight buffer
- * Don't update the sbuf rptr, this will be
- * done in sbdrop when the data is acked
- */
 void sbcopy(struct sbuf *sb, size_t off, size_t len, char *to)
 {
     char *from;

@@ -506,9 +506,6 @@ void tcp_setpersist(struct tcpcb *tp)
 {
     int t = ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1;
 
-    /*
-     * Start/restart persistence timer.
-     */
     TCPT_RANGESET(tp->t_timer[TCPT_PERSIST], t * tcp_backoff[tp->t_rxtshift],
                   TCPTV_PERSMIN, TCPTV_PERSMAX);
     if (tp->t_rxtshift < TCP_MAXRXTSHIFT)

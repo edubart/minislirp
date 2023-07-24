@@ -199,11 +199,6 @@ int m_copy(struct mbuf *n, struct mbuf *m, int off, int len)
 }
 
 
-/*
- * Given a pointer into an mbuf, return the mbuf
- * XXX This is a kludge, I should eliminate the need for it
- * Fortunately, it's not used often
- */
 struct mbuf *dtom(Slirp *slirp, void *dat)
 {
     struct mbuf *m;
@@ -228,12 +223,6 @@ struct mbuf *dtom(Slirp *slirp, void *dat)
     return (struct mbuf *)0;
 }
 
-/*
- * Duplicate the mbuf
- *
- * copy_header specifies whether the bytes before m_data should also be copied.
- * header_size specifies how many bytes are to be reserved before m_data.
- */
 struct mbuf *m_dup(Slirp *slirp, struct mbuf *m,
                    bool copy_header,
                    size_t header_size)

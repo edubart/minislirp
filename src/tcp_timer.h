@@ -123,8 +123,11 @@ extern const int tcp_backoff[];
 
 struct tcpcb;
 
+/* Process fast time-outs */
 void tcp_fasttimo(Slirp *);
+/* Process slow time-outs */
 void tcp_slowtimo(Slirp *);
+/* Cancel all timers for TCP tp */
 void tcp_canceltimers(struct tcpcb *);
 
 #endif

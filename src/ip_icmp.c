@@ -85,6 +85,7 @@ void icmp_cleanup(Slirp *slirp)
     }
 }
 
+/* Send ICMP packet to the Internet, and save it to so_m */
 static int icmp_send(struct socket *so, struct mbuf *m, int hlen)
 {
     Slirp *slirp = m->slirp;

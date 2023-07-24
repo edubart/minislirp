@@ -43,12 +43,18 @@ enum {
     SLIRP_POLL_HUP = 1 << 4,
 };
 
+/* Callback for application to get data from the guest */
 typedef slirp_ssize_t (*SlirpReadCb)(void *buf, size_t len, void *opaque);
+/* Callback for application to send data to the guest */
 typedef slirp_ssize_t (*SlirpWriteCb)(const void *buf, size_t len, void *opaque);
+/* Timer callback */
 typedef void (*SlirpTimerCb)(void *opaque);
+/* Callback for libslirp to register polling callbacks */
 typedef int (*SlirpAddPollCb)(int fd, int events, void *opaque);
+/* Callback for libslirp to get polling result */
 typedef int (*SlirpGetREventsCb)(int idx, void *opaque);
 
+/* For now libslirp creates only a timer for the IPv6 RA */
 typedef enum SlirpTimerId {
     SLIRP_TIMER_RA,
     SLIRP_TIMER_NUM,
@@ -108,26 +114,46 @@ typedef struct SlirpConfig {
     /*
      * Fields introduced in SlirpConfig version 1 begin
      */
+    /* Whether to prevent the guest from accessing the Internet */
     int restricted;
+    /* Whether IPv4 is enabled */
     bool in_enabled;
+    /* Virtual network for the guest */
     struct in_addr vnetwork;
+    /* Mask for the virtual network for the guest */
     struct in_addr vnetmask;
+    /* Virtual address for the host exposed to the guest */
     struct in_addr vhost;
+    /* Whether IPv6 is enabled */
     bool in6_enabled;
+    /* Virtual IPv6 network for the guest */
     struct in6_addr vprefix_addr6;
+    /* Len of the virtual IPv6 network for the guest */
     uint8_t vprefix_len;
+    /* Virtual address for the host exposed to the guest */
     struct in6_addr vhost6;
+    /* Hostname exposed to the guest in DHCP hostname option */
     const char *vhostname;
+    /* Hostname exposed to the guest in the DHCP TFTP server name option */
     const char *tftp_server_name;
+    /* Path of the files served by TFTP */
     const char *tftp_path;
+    /* Boot file name exposed to the guest via DHCP */
     const char *bootfile;
+    /* Start of the DHCP range */
     struct in_addr vdhcp_start;
+    /* Virtual address for the DNS server exposed to the guest */
     struct in_addr vnameserver;
+    /* Virtual IPv6 address for the DNS server exposed to the guest */
     struct in6_addr vnameserver6;
+    /* DNS search names exposed to the guest via DHCP */
     const char **vdnssearch;
+    /* Domain name exposed to the guest via DHCP */
     const char *vdomainname;
+    /* MTU when sending packets to the guest */
     /* Default: IF_MTU_DEFAULT */
     size_t if_mtu;
+    /* MRU when receiving packets from the guest */
     /* Default: IF_MRU_DEFAULT */
     size_t if_mru;
     /* Prohibit connecting to 127.0.0.1:* */
@@ -137,23 +163,32 @@ typedef struct SlirpConfig {
      * recommended to enable it)
      */
     bool enable_emu;
+
     /*
      * Fields introduced in SlirpConfig version 2 begin
      */
+    /* Address to be used when sending data to the Internet */
     struct sockaddr_in *outbound_addr;
+    /* IPv6 Address to be used when sending data to the Internet */
     struct sockaddr_in6 *outbound_addr6;
+
     /*
      * Fields introduced in SlirpConfig version 3 begin
      */
-    bool disable_dns;  /* slirp will not redirect/serve any DNS packet */
+    /* slirp will not redirect/serve any DNS packet */
+    bool disable_dns;
+
     /*
      * Fields introduced in SlirpConfig version 4 begin
      */
-    bool disable_dhcp; /* slirp will not reply to any DHCP requests */
+    /* slirp will not reply to any DHCP requests */
+    bool disable_dhcp;
+
     /*
      * Fields introduced in SlirpConfig version 5 begin
      */
-    uint32_t mfr_id; /* Manufacturer ID (IANA Private Enterprise number) */
+    /* Manufacturer ID (IANA Private Enterprise number) */
+    uint32_t mfr_id;
     /*
      * MAC address allocated for an out-of-band management controller, to be
      * retrieved through NC-SI.

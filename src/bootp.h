@@ -125,6 +125,7 @@ typedef struct {
 
 #define NB_BOOTP_CLIENTS 16
 
+/* Process a bootp packet from the guest */
 void bootp_input(struct mbuf *m);
 
 #endif

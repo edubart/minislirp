@@ -131,15 +131,6 @@ diddit:
     if_start(ifm->slirp);
 }
 
-/*
- * Send one packet from each session.
- * If there are packets on the fastq, they are sent FIFO, before
- * everything else.  Then we choose the first packet from each
- * batchq session (socket) and send it.
- * For example, if there are 3 ftp sessions fighting for bandwidth,
- * one packet will be sent from the first session, then one packet
- * from the second session, then one packet from the third.
- */
 void if_start(Slirp *slirp)
 {
     uint64_t now = slirp->cb->clock_get_ns(slirp->opaque);

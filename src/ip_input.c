@@ -413,11 +413,6 @@ static void ip_deq(register struct ipas *p)
     ((struct ipas *)(p->link.next))->link.prev = p->link.prev;
 }
 
-/*
- * IP timer processing;
- * if a timer expires on a reassembly
- * queue, discard it.
- */
 void ip_slowtimo(Slirp *slirp)
 {
     struct qlink *l;
@@ -438,13 +433,6 @@ void ip_slowtimo(Slirp *slirp)
     }
 }
 
-/*
- * Strip out IP options, at higher
- * level protocol in the kernel.
- * Second argument is buffer to which options
- * will be moved, and return value is their length.
- * (XXX) should be deleted; last arg currently ignored.
- */
 void ip_stripoptions(register struct mbuf *m, struct mbuf *mopt)
 {
     register int i;

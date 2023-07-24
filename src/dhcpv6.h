@@ -63,6 +63,7 @@
 
 #define in6_dhcp_multicast(a) in6_equal(a, &(struct in6_addr)ALLDHCP_MULTICAST)
 
+/* Process a DHCPv6 packet from the guest */
 void dhcpv6_input(struct sockaddr_in6 *srcsas, struct mbuf *m);
 
 #endif

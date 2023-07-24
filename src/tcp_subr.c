@@ -59,12 +59,6 @@ void tcp_cleanup(Slirp *slirp)
     }
 }
 
-/*
- * Create template to be used to send tcp packets on a connection.
- * Call after host entry created, fills
- * in a skeletal tcp/ip header, minimizing the amount of work
- * necessary when the connection is used.
- */
 void tcp_template(struct tcpcb *tp)
 {
     struct socket *so = tp->t_socket;
@@ -246,11 +240,6 @@ void tcp_respond(struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf *m,
     }
 }
 
-/*
- * Create a new TCP control block, making an
- * empty reassembly queue and hooking it to the argument
- * protocol control block.
- */
 struct tcpcb *tcp_newtcpcb(struct socket *so)
 {
     register struct tcpcb *tp;
@@ -290,11 +279,6 @@ struct tcpcb *tcp_newtcpcb(struct socket *so)
     return (tp);
 }
 
-/*
- * Drop a TCP connection, reporting
- * the specified error.  If connection is synchronized,
- * then send a RST to peer.
- */
 struct tcpcb *tcp_drop(struct tcpcb *tp, int err)
 {
     DEBUG_CALL("tcp_drop");
@@ -308,12 +292,6 @@ struct tcpcb *tcp_drop(struct tcpcb *tp, int err)
     return (tcp_close(tp));
 }
 
-/*
- * Close a TCP control block:
- *	discard all space held by the tcp
- *	discard internet protocol block
- *	wake up any sleepers
- */
 struct tcpcb *tcp_close(struct tcpcb *tp)
 {
     register struct tcpiphdr *t;
@@ -389,8 +367,6 @@ void tcp_sockclosed(struct tcpcb *tp)
 }
 
 /*
- * Connect to a host on the Internet
- * Called by tcp_input
  * Only do a connect, the tcp fields will be set in tcp_input
  * return 0 if there's a result of the connect,
  * else return -1 means we're still connecting
@@ -448,8 +424,6 @@ int tcp_fconnect(struct socket *so, unsigned short af)
 }
 
 /*
- * Accept the socket and connect to the local-host
- *
  * We have a problem. The correct thing to do would be
  * to first connect to the local-host, and only if the
  * connection is accepted, then do an accept() here.
@@ -571,9 +545,6 @@ void tcp_connect(struct socket *inso)
     tcp_output(tp);
 }
 
-/*
- * Attach a TCPCB to a socket.
- */
 void tcp_attach(struct socket *so)
 {
     so->so_tcpcb = tcp_newtcpcb(so);
@@ -598,9 +569,6 @@ static const struct tos_t tcptos[] = {
     { 0, 0, 0, 0 }
 };
 
-/*
- * Return TOS according to the above table
- */
 uint8_t tcp_tos(struct socket *so)
 {
     int i = 0;
@@ -618,11 +586,6 @@ uint8_t tcp_tos(struct socket *so)
 }
 
 /*
- * Emulate programs that try and connect to us
- * This includes ftp (the data connection is
- * initiated by the server) and IRC (DCC CHAT and
- * DCC SEND) for now
- *
  * NOTE: It's possible to crash SLiRP by sending it
  * unstandard strings to emulate... if this is a problem,
  * more checks are needed here

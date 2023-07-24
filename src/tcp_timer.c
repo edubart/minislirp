@@ -98,9 +98,6 @@ void tcp_slowtimo(Slirp *slirp)
     slirp->tcp_now++; /* for timestamps */
 }
 
-/*
- * Cancel all timers for TCP tp.
- */
 void tcp_canceltimers(struct tcpcb *tp)
 {
     register int i;

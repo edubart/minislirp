@@ -769,10 +769,6 @@ int sosendto(struct socket *so, struct mbuf *m)
     return 0;
 }
 
-/*
- * Listen for incoming TCP connections
- * On failure errno contains the reason.
- */
 struct socket *tcpx_listen(Slirp *slirp,
                            const struct sockaddr *haddr, socklen_t haddrlen,
                            const struct sockaddr *laddr, socklen_t laddrlen,
@@ -939,10 +935,6 @@ static void sofcantsendmore(struct socket *so)
     }
 }
 
-/*
- * Set write drain mode
- * Set CANTSENDMORE once all data has been write()n
- */
 void sofwdrain(struct socket *so)
 {
     if (so->so_rcv.sb_cc)
@@ -993,9 +985,6 @@ static bool sotranslate_out6(Slirp *s, struct socket *so, struct sockaddr_in6 *s
 }
 
 
-/*
- * Translate addr in host addr when it is a virtual address
- */
 int sotranslate_out(struct socket *so, struct sockaddr_storage *addr)
 {
     bool ok = true;
@@ -1053,9 +1042,6 @@ void sotranslate_in(struct socket *so, struct sockaddr_storage *addr)
     }
 }
 
-/*
- * Translate connections from localhost to the real hostname
- */
 void sotranslate_accept(struct socket *so)
 {
     Slirp *slirp = so->slirp;

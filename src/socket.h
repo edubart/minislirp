@@ -117,6 +117,7 @@ struct socket {
     0x2000 /* Connection was initiated by a host on the internet */
 #define SS_HOSTFWD_V6ONLY 0x4000 /* Only bind on v6 addresses */
 
+/* Check that two addresses are equal */
 static inline int sockaddr_equal(const struct sockaddr_storage *a,
                                  const struct sockaddr_storage *b)
 {
@@ -151,6 +152,7 @@ static inline int sockaddr_equal(const struct sockaddr_storage *a,
     return 0;
 }
 
+/* Get the size of an address */
 static inline socklen_t sockaddr_size(const struct sockaddr_storage *a)
 {
     switch (a->ss_family) {
@@ -167,6 +169,7 @@ static inline socklen_t sockaddr_size(const struct sockaddr_storage *a)
     }
 }
 
+/* Copy an address */
 static inline void sockaddr_copy(struct sockaddr *dst, socklen_t dstlen, const struct sockaddr *src, socklen_t srclen)
 {
     socklen_t len = sockaddr_size((const struct sockaddr_storage *) src);
@@ -175,32 +178,59 @@ static inline void sockaddr_copy(struct sockaddr *dst, socklen_t dstlen, const s
     memcpy(dst, src, len);
 }
 
-struct socket *solookup(struct socket **, struct socket *,
-                        struct sockaddr_storage *, struct sockaddr_storage *);
+/* Find the socket corresponding to lhost & fhost, trying last as a guess */
+struct socket *solookup(struct socket **last, struct socket *head,
+                        struct sockaddr_storage *lhost, struct sockaddr_storage *fhost);
+/* Create a new socket */
 struct socket *socreate(Slirp *, int);
+/* Release a socket */
 void sofree(struct socket *);
+/* Receive the available data from the Internet socket and queue it on the sb */
 int soread(struct socket *);
+/* Receive the available OOB data from the Internet socket and try to send it immediately */
 int sorecvoob(struct socket *);
+/* Send OOB data to the Internet socket */
 int sosendoob(struct socket *);
+/* Send data to the Internet socket */
 int sowrite(struct socket *);
+/* Receive the available data from the Internet UDP socket, and send it to the guest */
 void sorecvfrom(struct socket *);
+/* Send data to the Internet UDP socket */
 int sosendto(struct socket *, struct mbuf *);
-struct socket *tcp_listen(Slirp *, uint32_t, unsigned, uint32_t, unsigned, int);
+/* Listen for incoming TCPv4 connections on this haddr+hport */
+struct socket *tcp_listen(Slirp *, uint32_t haddr, unsigned hport, uint32_t laddr, unsigned lport, int flags);
+/*
+ * Listen for incoming TCP connections on this haddr
+ * On failure errno contains the reason.
+ */
 struct socket *tcpx_listen(Slirp *slirp,
                            const struct sockaddr *haddr, socklen_t haddrlen,
                            const struct sockaddr *laddr, socklen_t laddrlen,
                            int flags);
+/* Note that the socket is connecting */
 void soisfconnecting(register struct socket *);
+/* Note that the socket is connected */
 void soisfconnected(register struct socket *);
+/*
+ * Set write drain mode
+ * Set CANTSENDMORE once all data has been write()n
+ */
 void sofwdrain(struct socket *);
 struct iovec; /* For win32 */
+/* Prepare iov for storing into the sb */
 size_t sopreprbuf(struct socket *so, struct iovec *iov, int *np);
+/* Get data from the buffer and queue it on the sb */
 int soreadbuf(struct socket *so, const char *buf, int size);
 
+/* Translate addr into host addr when it is a virtual address, before sending to the Internet */
 int sotranslate_out(struct socket *, struct sockaddr_storage *);
+/* Translate addr into virtual address when it is host, before sending to the guest */
 void sotranslate_in(struct socket *, struct sockaddr_storage *);
+/* Translate connections from localhost to the real hostname */
 void sotranslate_accept(struct socket *);
+/* Drop num bytes from the reading end of the socket */
 void sodrop(struct socket *, int num);
+/* Forwarding a connection to the guest, try to find the guest address to use, fill lhost with it */
 int soassign_guest_addr_if_needed(struct socket *so);
 
 #endif /* SLIRP_SOCKET_H */
