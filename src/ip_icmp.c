@@ -34,7 +34,9 @@
 #include "slirp.h"
 #include "ip_icmp.h"
 
+#ifndef _WIN32
 #include <sys/param.h>
+#endif
 
 #ifndef WITH_ICMP_ERROR_MSG
 #define WITH_ICMP_ERROR_MSG 0
