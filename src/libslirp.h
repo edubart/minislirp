@@ -249,7 +249,10 @@ SLIRP_EXPORT
 void slirp_handle_timer(Slirp *slirp, SlirpTimerId id, void *cb_opaque);
 
 /* These set up / remove port forwarding between a host port in the real world
- * and the guest network. */
+ * and the guest network.
+ * Note: guest_addr must be in network order, while guest_port must be in host
+ * order.
+ */
 SLIRP_EXPORT
 int slirp_add_hostfwd(Slirp *slirp, int is_udp, struct in_addr host_addr,
                       int host_port, struct in_addr guest_addr, int guest_port);
