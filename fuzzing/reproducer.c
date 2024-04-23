@@ -7,9 +7,12 @@
 #endif
 
 #include <glib.h>
-#include "libslirp.h"
+#include <stdlib.h>
+#include "../src/libslirp.h"
 
-int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size);
+#define MIN_NUMBER_OF_RUNS 1
+#define EXIT_TEST_SKIP 77
+
 
 int connect(int sockfd, const struct sockaddr *addr,
             socklen_t addrlen)
@@ -53,7 +56,7 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
                  struct sockaddr *src_addr, socklen_t *addrlen)
 {
     memset(buf, 0, len);
-    *addrlen = 0;
+    memset(src_addr,0,*addrlen);
     return len / 2;
 }
 
@@ -63,21 +66,6 @@ int setsockopt(int sockfd, int level, int optname,
     return 0;
 }
 
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-static void empty_logging_func(const gchar *log_domain,
-                               GLogLevelFlags log_level, const gchar *message,
-                               gpointer user_data)
-{
-}
-#endif
-
-/* Disables logging for oss-fuzz. Must be used with each target. */
-static void fuzz_set_logging_func(void)
-{
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-    g_log_set_default_handler(empty_logging_func, NULL);
-#endif
-}
 
 static ssize_t send_packet(const void *pkt, size_t pkt_len, void *opaque)
 {
@@ -162,9 +150,10 @@ typedef struct pcaprec_hdr_s {
         guint32 orig_len;       /* actual length of packet */
 } pcaprec_hdr_t;
 
-int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size)
+
+static int reproduce_fuzz_case(const uint8_t *data, size_t size)
 {
-    Slirp *slirp;
+    Slirp *slirp = NULL;
     struct in_addr net = { .s_addr = htonl(0x0a000200) }; /* 10.0.2.0 */
     struct in_addr mask = { .s_addr = htonl(0xffffff00) }; /* 255.255.255.0 */
     struct in_addr host = { .s_addr = htonl(0x0a000202) }; /* 10.0.2.2 */
@@ -180,8 +169,8 @@ int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size)
     const char *bootfile = NULL;
     const char **dnssearch = NULL;
     const char *vdomainname = NULL;
-    pcap_hdr_t *hdr = (void *)data;
-    pcaprec_hdr_t *rec = NULL;
+    const pcap_hdr_t *hdr = (const void *)data;
+    const pcaprec_hdr_t *rec = NULL;
     uint32_t timeout = 0;
 
     if (size < sizeof(pcap_hdr_t)) {
@@ -194,12 +183,9 @@ int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size)
         g_debug("FIXME: byteswap fields");
         return 0;
     } /* else assume native pcap file */
-
     if (hdr->network != 1) {
         return 0;
     }
-
-    fuzz_set_logging_func();
 
     ret = inet_pton(AF_INET6, "fec0::", &ip6_prefix);
     g_assert_cmpint(ret, ==, 1);
@@ -215,7 +201,7 @@ int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size)
                    dhcp, dns, ip6_dns, dnssearch, vdomainname, &slirp_cb, NULL);
 
     while (size > sizeof(*rec)) {
-        rec = (void *)data;
+        rec = (const void *)data;
         data += sizeof(*rec);
         size -= sizeof(*rec);
         if (rec->incl_len != rec->orig_len) {
@@ -229,7 +215,7 @@ int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size)
         slirp_input(slirp, data, rec->incl_len);
         slirp_pollfds_fill(slirp, &timeout, add_poll_cb, NULL);
         slirp_pollfds_poll(slirp, 0, get_revents_cb, NULL);
-
+        
         data += rec->incl_len;
         size -= rec->incl_len;
     }
@@ -237,4 +223,33 @@ int LLVMFuzzerTestOneInput(const unsigned char *data, size_t size)
     slirp_cleanup(slirp);
 
     return 0;
+}
+
+
+int main(int argc, char **argv)
+{
+    int i, j;
+
+    for (i = 1; i < argc; i++) {
+        GError *err = NULL;
+        char *name = argv[i];
+        char *buf;
+        size_t size;
+
+        if (!g_file_get_contents(name, &buf, &size, &err)) {
+            g_warning("Failed to read '%s': %s", name, err->message);
+            g_clear_error(&err);
+            return EXIT_FAILURE;
+        }
+
+        g_print("%s...\n", name);
+        for (j = 0; j < MIN_NUMBER_OF_RUNS; j++) {
+            if (reproduce_fuzz_case((void *)buf, size) == EXIT_TEST_SKIP) {
+                return EXIT_TEST_SKIP;
+            }
+        }
+        g_free(buf);
+    }
+
+    return EXIT_SUCCESS;
 }

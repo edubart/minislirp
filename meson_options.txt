@@ -7,5 +7,8 @@ option('oss-fuzz', type : 'boolean', value : 'false',
 option('llvm-fuzz', type : 'boolean', value : 'false',
        description : 'build against LLVM libFuzzer')
 
+option('fuzz-reproduce', type : 'boolean', value : 'false',
+       description : 'build a standalone executable to reproduce fuzz cases')
+
 option('static', type : 'boolean', value : 'false',
        description : 'build static binary')

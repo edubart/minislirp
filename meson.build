@@ -18,10 +18,14 @@ conf.set('SLIRP_MICRO_VERSION', micro_version)
 
 want_ossfuzz = get_option('oss-fuzz')
 want_libfuzzer = get_option('llvm-fuzz')
+fuzz_reproduce = get_option('fuzz-reproduce')
 if want_ossfuzz and want_libfuzzer
   error('only one of oss-fuzz and llvm-fuzz can be specified')
 endif
 fuzzer_build = want_ossfuzz or want_libfuzzer
+if fuzzer_build and fuzz_reproduce
+  error('fuzzer build and reproducer build are mutually exclusive')
+endif
 
 cc = meson.get_compiler('c')
 add_languages('cpp', required : fuzzer_build)
@@ -144,6 +148,23 @@ if cc.has_link_argument(vflag_test)
   vflag += vflag_test
 endif
 
+if fuzzer_build
+  cargs += '-fsanitize-coverage=edge,indirect-calls,trace-cmp'
+  cargs += '-fsanitize=fuzzer-no-link,address'
+  cargs += '-fprofile-instr-generate'
+  cargs += '-fcoverage-mapping'
+  cargs += '-g'
+  cargs += '-DSLIRP_DEBUG'
+  vflag += '-fsanitize=fuzzer-no-link,address'
+  vflag += '-fsanitize-coverage=edge,indirect-calls,trace-cmp'
+  vflag += '-fprofile-instr-generate'
+  vflag += '-fcoverage-mapping'
+endif
+if fuzz_reproduce
+  cargs += '-DSLIRP_DEBUG'
+  cargs += '-g'
+endif
+
 install_devel = not meson.is_subproject()
 
 configure_file(
@@ -154,17 +175,28 @@ configure_file(
   configuration : conf
 )
 
-lib = library('slirp', sources,
-  version : lt_version,
-  c_args : cargs,
-  link_args : vflag,
-  link_depends : mapfile,
-  dependencies : [glib_dep, platform_deps],
-  install : install_devel or get_option('default_library') == 'shared',
-)
+if fuzzer_build or fuzz_reproduce
+  lib = static_library('slirp', sources,
+    c_args : cargs,
+    link_args : vflag,
+    link_depends : mapfile,
+    dependencies : [glib_dep, platform_deps],
+  )
+else
+  lib = library('slirp', sources,
+    version : lt_version,
+    c_args : cargs,
+    link_args : vflag,
+    link_depends : mapfile,
+    dependencies : [glib_dep, platform_deps],
+    install : install_devel or get_option('default_library') == 'shared',
+  )
+endif
 
 pingtest = executable('pingtest', 'test/pingtest.c',
   link_with: [ lib ],
+  c_args : cargs,
+  link_args : vflag,
   include_directories: [ 'src' ],
   dependencies : [ platform_deps ]
 )
@@ -173,6 +205,8 @@ test('ping', pingtest)
 
 ncsitest = executable('ncsitest', 'test/ncsitest.c',
   link_with: [lib],
+  c_args : cargs,
+  link_args : vflag,
   include_directories: ['src'],
   dependencies: [glib_dep, platform_deps]
 )

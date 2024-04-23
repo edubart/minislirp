@@ -10,6 +10,7 @@ export OUT=${OUT:-$(pwd)/out}
 build=$WORK/build
 rm -rf $build
 mkdir -p $build
+mkdir -p $OUT
 
 fuzzflag="oss-fuzz=true"
 if [ -z "$FUZZING_ENGINE" ]; then
