@@ -219,11 +219,11 @@ void tcp_input(struct mbuf *m, int iphlen, struct socket *inso,
     switch (af) {
     case AF_INET:
         M_DUP_DEBUG(slirp, m, 0,
-            sizeof(struct tcpiphdr) - sizeof(struct ip) - sizeof(struct tcphdr));
+            sizeof(struct qlink) + sizeof(struct tcpiphdr) - sizeof(struct ip) - sizeof(struct tcphdr));
         break;
     case AF_INET6:
         M_DUP_DEBUG(slirp, m, 0,
-            sizeof(struct tcpiphdr) - sizeof(struct ip6) - sizeof(struct tcphdr));
+            sizeof(struct qlink) + sizeof(struct tcpiphdr) - sizeof(struct ip6) - sizeof(struct tcphdr));
         break;
     }
 
