@@ -40,7 +40,7 @@ static void m_cleanup_list(struct slirp_quehead *list_head, bool pkts)
 
         last = false;
         do {
-            next2 = m->ifs_next;
+            next2 = m->m_nextpkt;
 
             if (pkts) {
                 ifs_remque(m);
