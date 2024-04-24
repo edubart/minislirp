@@ -17,6 +17,8 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
     size_t current_size = Size;
     uint8_t *Data_ptr = Data;
     uint8_t *ip_data;
+    uint32_t ipsource;
+    bool mutated = false;
 
     pcap_hdr_t *hdr = (void *)Data_ptr;
     pcaprec_hdr_t *rec = NULL;
@@ -36,10 +38,11 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
         return 0;
     }
 
-    while (current_size > sizeof(*rec)) {
+    for ( ; current_size > sizeof(*rec); Data_ptr += rec->incl_len, current_size -= rec->incl_len) {
         rec = (void *)Data_ptr;
         Data_ptr += sizeof(*rec);
         current_size -= sizeof(*rec);
+
         if (rec->incl_len != rec->orig_len) {
             return 0;
         }
@@ -51,6 +54,15 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
         }
 
         ip_data = Data_ptr + 14;
+
+        if (rec->incl_len >= 14 + 16) {
+            ipsource = * (uint32_t*) (ip_data + 12);
+
+            // This an answer, which we will produce, so don't mutate
+            if (ipsource == htonl(0x0a000202) || ipsource == htonl(0x0a000203))
+                continue;
+        }
+
         uint8_t Data_to_mutate[MaxSize];
         uint8_t ip_hl = (ip_data[0] & 0xF);
         uint8_t ip_hl_in_bytes = ip_hl * 4; /* ip header length */
@@ -89,9 +101,11 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
         // Copy the mutated data back to the `Data` array
         memcpy(ip_data, Data_to_mutate, ip_hl_in_bytes);
 
-        Data_ptr += rec->incl_len;
-        current_size -= rec->incl_len;
+        mutated = true;
     }
+
+    if (!mutated)
+        return 0;
 
     return Size;
 }

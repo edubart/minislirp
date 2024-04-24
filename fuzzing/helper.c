@@ -190,6 +190,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     const pcap_hdr_t *hdr = (const void *)data;
     const pcaprec_hdr_t *rec = NULL;
     uint32_t timeout = 0;
+    uint32_t ipsource;
 
     if (size < sizeof(pcap_hdr_t)) {
         return 0;
@@ -225,7 +226,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     slirp_add_exec(slirp, "cat", &fwd, 1234);
 
 
-    while (size > sizeof(*rec)) {
+    for ( ; size > sizeof(*rec); data += rec->incl_len, size -= rec->incl_len) {
         rec = (const void *)data;
         data += sizeof(*rec);
         size -= sizeof(*rec);
@@ -237,20 +238,18 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         if (rec->incl_len > size) {
             break;
         }
-        if (rec->incl_len < 14 + 1) {
-            break;
-        }
 
-        // TODO: check host and guest address, if not guest (in source ip) continue
-        /* if (ipsource != htonl(0x0a00020f) && ipsource != 0)
-            continue; */
+        if (rec->incl_len >= 14 + 16) {
+            ipsource = * (uint32_t*) (data + 14 + 12);
+
+            // This an answer, which we will produce, so don't receive
+            if (ipsource == htonl(0x0a000202) || ipsource == htonl(0x0a000203))
+                continue;
+        }
 
         slirp_input(slirp, data, rec->incl_len);
         slirp_pollfds_fill(slirp, &timeout, add_poll_cb, NULL);
         slirp_pollfds_poll(slirp, 0, get_revents_cb, NULL);
-
-        data += rec->incl_len;
-        size -= rec->incl_len;
     }
 
     slirp_cleanup(slirp);
