@@ -29,17 +29,34 @@ void m_init(Slirp *slirp)
     slirp->m_usedlist.qh_link = slirp->m_usedlist.qh_rlink = &slirp->m_usedlist;
 }
 
-static void m_cleanup_list(struct slirp_quehead *list_head)
+static void m_cleanup_list(struct slirp_quehead *list_head, bool pkts)
 {
-    struct mbuf *m, *next;
+    struct mbuf *m, *next, *next2;
+    bool last;
 
     m = (struct mbuf *)list_head->qh_link;
     while ((struct slirp_quehead *)m != list_head) {
         next = m->m_next;
-        if (m->m_flags & M_EXT) {
-            g_free(m->m_ext);
-        }
-        g_free(m);
+
+        last = false;
+        do {
+            next2 = m->ifs_next;
+
+            if (pkts) {
+                ifs_remque(m);
+                last = next2 == m;
+            } else {
+                last = true;
+            }
+
+            if (m->m_flags & M_EXT) {
+                g_free(m->m_ext);
+            }
+
+            g_free(m);
+            m = next2;
+        } while (!last);
+
         m = next;
     }
     list_head->qh_link = list_head;
@@ -48,10 +65,10 @@ static void m_cleanup_list(struct slirp_quehead *list_head)
 
 void m_cleanup(Slirp *slirp)
 {
-    m_cleanup_list(&slirp->m_usedlist);
-    m_cleanup_list(&slirp->m_freelist);
-    m_cleanup_list(&slirp->if_batchq);
-    m_cleanup_list(&slirp->if_fastq);
+    m_cleanup_list(&slirp->m_usedlist, false);
+    m_cleanup_list(&slirp->m_freelist, false);
+    m_cleanup_list(&slirp->if_batchq, true);
+    m_cleanup_list(&slirp->if_fastq, true);
 }
 
 /*

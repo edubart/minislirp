@@ -109,6 +109,12 @@ struct mbuf {
 #define ifs_next m_nextpkt
 #define ifq_so m_so
 
+static inline void ifs_remque(struct mbuf *ifm)
+{
+    ifm->ifs_prev->ifs_next = ifm->ifs_next;
+    ifm->ifs_next->ifs_prev = ifm->ifs_prev;
+}
+
 #define M_EXT 0x01 /* m_ext points to more (malloced) data */
 #define M_FREELIST 0x02 /* mbuf is on free list */
 #define M_USEDLIST 0x04 /* XXX mbuf is on used list (for dtom()) */
