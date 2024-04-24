@@ -162,7 +162,7 @@ present:
             } else
                 sbappend(so, m);
         }
-    } while (ti != (struct tcpiphdr *)tp && ti->ti_seq == tp->rcv_nxt);
+    } while (!tcpfrag_list_end(ti, tp) && ti->ti_seq == tp->rcv_nxt);
     return (flags);
 }
 
