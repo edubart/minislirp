@@ -14,7 +14,7 @@ size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size, size_t MaxSize, unsig
 extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
                                       size_t MaxSize, unsigned int Seed)
 {
-    size_t current_size = Size;
+    size_t i, current_size = Size;
     uint8_t *Data_ptr = Data;
     uint8_t *ip_data;
 
@@ -41,6 +41,7 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
         Data_ptr += sizeof(*rec);
         current_size -= sizeof(*rec);
 
+
         if (rec->incl_len != rec->orig_len) {
             return 0;
         }
@@ -53,14 +54,15 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
 
         ip_data = Data_ptr + 14;
 
-        // Exclude packets that are not UDP from the mutation strategy
-        if (ip_data[9] != IPPROTO_UDP) {
+        // Exclude packets that are not TCP from the mutation strategy
+        if (ip_data[9] != IPPROTO_TCP) {
             Data_ptr += rec->incl_len;
             current_size -= rec->incl_len;
             continue;
         }
-
-        uint8_t Data_to_mutate[MaxSize];
+        // Allocate a bit more than needed, this is useful for
+        // checksum calculation.
+        uint8_t Data_to_mutate[MaxSize + 12];
         uint8_t ip_hl = (ip_data[0] & 0xF);
         uint8_t ip_hl_in_bytes = ip_hl * 4; /* ip header length */
 
@@ -71,37 +73,59 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
         if (ip_hl_in_bytes > rec->incl_len - 14)
             return 0;
 
-        uint8_t *start_of_udp = ip_data + ip_hl_in_bytes;
-        uint16_t udp_size = ntohs(*(uint16_t *)(start_of_udp + 4));
+        uint8_t *start_of_tcp = ip_data + ip_hl_in_bytes;
+        uint8_t tcp_header_size = (*(start_of_tcp + 12) >> 4) * 4;
+        uint16_t total_length = ntohs(*((uint16_t *)ip_data + 1));
+        uint16_t tcp_size = (total_length - (uint16_t)ip_hl_in_bytes);
 
         // The size inside the packet can't be trusted, if it is too big it can
         // lead to heap overflows in the fuzzing code.
-        // Fixme : don't use udp_size inside the fuzzing code, maybe use the
+        // Fixme : don't use tcp_size inside the fuzzing code, maybe use the
         //         rec->incl_len and manually calculate the size.
-        if (udp_size > MaxSize || udp_size > rec->incl_len - 14 - ip_hl_in_bytes)
+        if (tcp_size > MaxSize || tcp_size > rec->incl_len - 14 - ip_hl_in_bytes ||
+            tcp_header_size > MaxSize || tcp_header_size > rec->incl_len - 14 - ip_hl_in_bytes)
             return 0;
 
         // Copy interesting data to the `Data_to_mutate` array
-        // here we want to fuzz everything in the udp packet
-        memset(Data_to_mutate, 0, MaxSize);
-        memcpy(Data_to_mutate, start_of_udp, udp_size);
+        // here we want to fuzz everything in the tcp packet
+        memset(Data_to_mutate, 0, MaxSize + 12);
+        memcpy(Data_to_mutate, start_of_tcp, tcp_size);
 
         // Call to libfuzzer's mutation function.
-        // Pass the whole UDP packet, mutate it and then fix checksum value
+        // Pass the whole tcp packet, mutate it and then fix checksum value
         // so the packet isn't rejected.
         // The new size of the data is returned by LLVMFuzzerMutate.
-        // Fixme: allow to change the size of the UDP packet, this will require
+        // Fixme: allow to change the size of the tcp packet, this will require
         //     to fix the size before calculating the new checksum and change
         //     how the Data_ptr is advanced.
         //     Most offsets bellow should be good for when the switch will be
         //     done to avoid overwriting new/mutated data.
-        LLVMFuzzerMutate(Data_to_mutate, udp_size, udp_size);
+        LLVMFuzzerMutate(Data_to_mutate, tcp_header_size, tcp_header_size);
 
-        // Drop checksum
-        *(uint16_t *)(Data_to_mutate + 6) = 0;
+        // Set the `checksum` field to 0 to calculate the new checksum
+
+        *(uint16_t *)(Data_to_mutate + 16) = (uint16_t)0;
+        // Copy the source and destination IP addresses, the tcp length and
+        // protocol number at the end of the `Data_to_mutate` array to calculate
+        // the new checksum.
+        for (i = 0; i < 4; i++) {
+            *(Data_to_mutate + tcp_size + i) = *(ip_data + 12 + i);
+        }
+        for (i = 0; i < 4; i++) {
+            *(Data_to_mutate + tcp_size + 4 + i) = *(ip_data + 16 + i);
+        }
+
+        *(Data_to_mutate + tcp_size + 9) = IPPROTO_TCP;
+
+        *(Data_to_mutate + tcp_size + 10) = (uint8_t)(tcp_size / 256);
+        *(Data_to_mutate + tcp_size + 11) = (uint8_t)(tcp_size % 256);
+
+        uint16_t new_checksum =
+            compute_checksum(Data_to_mutate, tcp_size + 12);
+        *(uint16_t *)(Data_to_mutate + 16) = htons(new_checksum);
 
         // Copy the mutated data back to the `Data` array
-        memcpy(start_of_udp, Data_to_mutate, udp_size);
+        memcpy(start_of_tcp, Data_to_mutate, tcp_size);
 
         Data_ptr += rec->incl_len;
         current_size -= rec->incl_len;

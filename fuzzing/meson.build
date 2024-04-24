@@ -20,7 +20,16 @@ endif
 deps = [glib_dep, libslirp_dep, platform_deps]
 
 exes = [['fuzz-ip-header', ['slirp_fuzz_ip_header.c', 'helper.c']],
-        ['fuzz-udp', ['slirp_fuzz_udp.c', 'helper.c']]]
+        ['fuzz-udp', ['slirp_fuzz_udp.c', 'helper.c']],
+        ['fuzz-udp-h', ['slirp_fuzz_udp_header.c', 'helper.c']],
+        ['fuzz-udp-d', ['slirp_fuzz_udp_data.c', 'helper.c']],
+        ['fuzz-tftp', ['slirp_fuzz_udp_data.c', 'helper.c']],
+        ['fuzz-dhcp', ['slirp_fuzz_udp_data.c', 'helper.c']],
+        ['fuzz-tcp', ['slirp_fuzz_tcp.c', 'helper.c']],
+        ['fuzz-tcp-h', ['slirp_fuzz_tcp_header.c', 'helper.c']],
+        ['fuzz-tcp-d', ['slirp_fuzz_tcp_data.c', 'helper.c']],
+        ['fuzz-icmp', ['slirp_fuzz_icmp.c', 'helper.c']],
+        ]
 
 if fuzzer_build
   foreach exe : exes
@@ -34,7 +43,7 @@ if fuzzer_build
 endif
 
 if fuzz_reproduce
-  executable(['reproducer', ['reproducer.c']],
+  executable(['reproducer', ['reproducer.c', 'helper.c']],
     dependencies: deps,
     c_args: extra_cargs,
     link_args: extra_ldargs,

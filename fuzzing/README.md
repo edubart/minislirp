@@ -5,10 +5,12 @@ We chose to use libFuzzer because of its custom mutator feature, which allows to
 
 In the current state, the `meson.build` file is not compatible with the original one used by libSlirp main repository but it should be easy to merge them in a clean way. Also **in the current state, it seems that there is a memory leak inside the fuzzing code**, which make it run out of memory. The current goal is to find and get rid of this leak to allow fuzzing for longer without the process being interrupted because of it.
 
-Two harness are currently available, more are to be added later to focus on other parts of the code :
+Six harness are currently available, more are to be added later to focus on other parts of the code :
 
 - **fuzz-ip-header** : the mutator focuses on the ip header field informations,
-- **fuzz-udp** : the mutator only work on udp packets, mutating the udp header and content,
+- **fuzz-udp** : the mutator only work on udp packets, mutating the udp header and content, or only one or the other (-h,-d),
+- **fuzz-tcp** : the mutator targets tcp packets, header+data or only one or the other, or only one or the other (-h,-d),
+- **fuzz-icmp** : the mutator focuses on icmp packets,
 
 These harness should be good starting examples on how to fuzz libslirp using libFuzzer.
 
@@ -23,8 +25,16 @@ It will build the fuzzer in the ./build/fuzzing/ directory.
 
 A script named `fuzzing/coverage.py` is available to generate coverage informations. **It makes a lot of assumptions on the directory structure** and should be read before use.
 
-To run the fuzzer, simply run `build/fuzzing/fuzz-ip-header
-fuzzing/IN -detect_leaks=0`.
+To run the fuzzer, simply run some of:
+
+- `build/fuzzing/fuzz-ip-header fuzzing/IN_ip-header`
+- `build/fuzzing/fuzz-udp fuzzing/IN_udp`
+- `build/fuzzing/fuzz-udp-h fuzzing/IN_udp-h`
+- `build/fuzzing/fuzz-tftp fuzzing/IN_tftp`
+- `build/fuzzing/fuzz-dhcp fuzzing/IN_dhcp`
+- `build/fuzzing/fuzz-icmp fuzzing/IN_icmp`
+- `build/fuzzing/fuzz-tcp fuzzing/IN_tcp`
+
 Your current directory should be a separate directory as crashes to it. New inputs found by the fuzzer will go directly in the `IN` folder.
 
 # Adding new files to the corpus
@@ -36,6 +46,7 @@ New files should give new coverage, to ensure a new file is usefull the `coverag
 # Coverage
 
 The `coverage.py` script allows to see coverage informations about the corpus. It makes a lot of assumptions on the directory structure so it should be read and probably modified before running it.
+It must be called with the protocol to cover: `python coverage.py udp report`.
 To generate coverage informations, the following flags are passed to the fuzzer and libslirp :
 
 - g
