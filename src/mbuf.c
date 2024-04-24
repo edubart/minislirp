@@ -39,7 +39,7 @@ static void m_cleanup_list(struct slirp_quehead *list_head, bool pkts)
         next = m->m_next;
 
         last = false;
-        do {
+        while (1) {
             next2 = m->m_nextpkt;
 
             if (pkts) {
@@ -54,8 +54,11 @@ static void m_cleanup_list(struct slirp_quehead *list_head, bool pkts)
             }
 
             g_free(m);
+
+            if (last)
+                break;
             m = next2;
-        } while (!last);
+        };
 
         m = next;
     }
