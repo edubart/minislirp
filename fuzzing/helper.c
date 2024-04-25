@@ -183,7 +183,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     int ret, vprefix6_len = 64;
     const char *vhostname = NULL;
     const char *tftp_server_name = NULL;
-    const char *tftp_export = NULL;
+    const char *tftp_export = "fuzzing/tftp";
     const char *bootfile = NULL;
     const char **dnssearch = NULL;
     const char *vdomainname = NULL;
