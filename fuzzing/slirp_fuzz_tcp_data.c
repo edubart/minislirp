@@ -100,10 +100,10 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
         memcpy(Data_to_mutate, start_of_tcp, tcp_size);
 
         // Call to libfuzzer's mutation function.
-        // Pass the whole tcp packet, mutate it and then fix checksum value
+        // Pass the whole TCP packet, mutate it and then fix checksum value
         // so the packet isn't rejected.
         // The new size of the data is returned by LLVMFuzzerMutate.
-        // Fixme: allow to change the size of the tcp packet, this will require
+        // Fixme: allow to change the size of the TCP packet, this will require
         //     to fix the size before calculating the new checksum and change
         //     how the Data_ptr is advanced.
         //     Most offsets bellow should be good for when the switch will be
