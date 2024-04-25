@@ -170,7 +170,7 @@ void m_inc(struct mbuf *m, int size)
     int gapsize;
 
     /* some compilers throw up on gotos.  This one we can fake. */
-    if (M_ROOM(m) > size) {
+    if (M_ROOM(m) >= size) {
         return;
     }
 
