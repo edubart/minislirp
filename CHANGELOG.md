@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.8.0] - TODO
+
+### Added
+
+  - Add support for Haiku !123
+  - ncsi: Add manufacturer's ID !122
+  - ncsi: Add Get Version ID command !122
+  - ncsi: Add out-of-band ethernet address !125
+  - ncsi: Add Mellanox Get Mac Address handler !125
+  - Add fuzzing infrastructure
+
+### Fixed
+
+  - Fix missing cleanups
+  - windows: Build fixes
+  - ipv6: Use target address from Neighbor Advertisement !129
+  - dns: Reject domain-search when any entry ends with ".."
+  - dns: Use localhost as dns when /etc/resolv.conf empty !130
+  - icmp: Handle ICMP packets as IPPROTO_IP on BSD !133
+  - tcp: Fix testing for last fragment
+  - tftp: Fix use-after-free
+  - eth: pad ethernet frames to 60 bytes #34
+
+### Removed
+
+  - windows: Bump the minimum Windows version to Windows 7
+
 ## [4.7.0] - 2022-04-26
 
 ### Added
