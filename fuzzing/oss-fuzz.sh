@@ -28,11 +28,12 @@ ninja -C $build
 
 zip -jqr $OUT/fuzz-ip-header_seed_corpus.zip "$(dirname "$0")/IN_ip-header"
 zip -jqr $OUT/fuzz-udp_seed_corpus.zip "$(dirname "$0")/IN_udp"
-zip -jqr $OUT/fuzz-udp_h_seed_corpus.zip "$(dirname "$0")/IN_udp-h"
+zip -jqr $OUT/fuzz-udp-h_seed_corpus.zip "$(dirname "$0")/IN_udp-h"
 zip -jqr $OUT/fuzz-tftp_seed_corpus.zip "$(dirname "$0")/IN_tftp"
 zip -jqr $OUT/fuzz-dhcp_seed_corpus.zip "$(dirname "$0")/IN_dhcp"
 zip -jqr $OUT/fuzz-icmp_seed_corpus.zip "$(dirname "$0")/IN_icmp"
 zip -jqr $OUT/fuzz-tcp_seed_corpus.zip "$(dirname "$0")/IN_tcp"
+zip -jqr $OUT/fuzz-tcp-h_seed_corpus.zip "$(dirname "$0")/IN_tcp-h"
 
 find $build -type f -executable -name "fuzz-*" -exec mv {} $OUT \;
 find $build -type f -name "*.options" -exec mv {} $OUT \;
