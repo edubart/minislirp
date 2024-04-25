@@ -260,8 +260,9 @@ struct mbuf *m_dup(Slirp *slirp, struct mbuf *m,
     if (copy_header) {
         m->m_len += header_size;
         m->m_data -= header_size;
-        mcopy_result = m_copy(n, m, 0, m->m_len + header_size);
+        mcopy_result = m_copy(n, m, 0, m->m_len);
         n->m_data += header_size;
+        n->m_len -= header_size;
         m->m_len -= header_size;
         m->m_data += header_size;
     } else {
