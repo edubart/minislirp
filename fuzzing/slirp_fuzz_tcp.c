@@ -14,7 +14,7 @@ size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size, size_t MaxSize, unsig
 extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
                                       size_t MaxSize, unsigned int Seed)
 {
-    size_t i, current_size = Size;
+    size_t current_size = Size;
     uint8_t *Data_ptr = Data;
     uint8_t *ip_data;
     uint32_t ipsource;
@@ -69,7 +69,7 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
 
         // Allocate a bit more than needed, this is useful for
         // checksum calculation.
-        uint8_t Data_to_mutate[MaxSize + 12];
+        uint8_t Data_to_mutate[MaxSize + PSEUDO_IP_SIZE];
         uint8_t ip_hl = (ip_data[0] & 0xF);
         uint8_t ip_hl_in_bytes = ip_hl * 4; /* ip header length */
 
@@ -93,7 +93,7 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
 
         // Copy interesting data to the `Data_to_mutate` array
         // here we want to fuzz everything in the tcp packet
-        memset(Data_to_mutate, 0, MaxSize + 12);
+        memset(Data_to_mutate, 0, MaxSize + PSEUDO_IP_SIZE);
         memcpy(Data_to_mutate, start_of_tcp, tcp_size);
 
         // Call to libfuzzer's mutation function.
@@ -113,12 +113,7 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
         // Copy the source and destination IP addresses, the tcp length and
         // protocol number at the end of the `Data_to_mutate` array to calculate
         // the new checksum.
-        for (i = 0; i < 4; i++) {
-            *(Data_to_mutate + tcp_size + i) = *(ip_data + 12 + i);
-        }
-        for (i = 0; i < 4; i++) {
-            *(Data_to_mutate + tcp_size + 4 + i) = *(ip_data + 16 + i);
-        }
+        memcpy(Data_to_mutate + tcp_size, ip_data + 12, 4*2);
 
         *(Data_to_mutate + tcp_size + 9) = IPPROTO_TCP;
 
@@ -126,7 +121,7 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
         *(Data_to_mutate + tcp_size + 11) = (uint8_t)(tcp_size % 256);
 
         uint16_t new_checksum =
-            compute_checksum(Data_to_mutate, tcp_size + 12);
+            compute_checksum(Data_to_mutate, tcp_size + PSEUDO_IP_SIZE);
         *(uint16_t *)(Data_to_mutate + 16) = htons(new_checksum);
 
         // Copy the mutated data back to the `Data` array
