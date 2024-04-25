@@ -39,7 +39,7 @@ build-usan:
 fuzz:
   parallel:
     matrix:
-      - TARGET: [ip-header, udp, udp-h, tftp, dhcp, icmp, tcp, tcp-h, tcp-d]
+      - TARGET: [ip-header, udp, udp-h, tftp, dhcp, icmp, tcp, tcp-h, ip6-header, udp6, udp6-h, tftp6, icmp6, tcp6, tcp6-h]
   script:
     - CC=clang CXX=clang++ meson build -Dllvm-fuzz=true || (cat build/meson-logs/meson-log.txt && exit 1)
     - ninja -C build

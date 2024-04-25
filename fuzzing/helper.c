@@ -2,12 +2,15 @@
 #include <glib.h>
 #include <stdlib.h>
 #include "../src/libslirp.h"
+#include "../src/ip6.h"
 #include "slirp_base_fuzz.h"
 
 #define MIN_NUMBER_OF_RUNS 1
 #define EXIT_TEST_SKIP 77
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
+struct in6_addr ip6_host;
+struct in6_addr ip6_dns;
 
 /// Function to compute the checksum of the ip header, should be compatible with
 /// TCP and UDP checksum calculation too.
@@ -178,8 +181,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     struct in_addr dhcp = { .s_addr = htonl(0x0a00020f) }; /* 10.0.2.15 */
     struct in_addr dns = { .s_addr = htonl(0x0a000203) }; /* 10.0.2.3 */
     struct in6_addr ip6_prefix;
-    struct in6_addr ip6_host;
-    struct in6_addr ip6_dns;
     int ret, vprefix6_len = 64;
     const char *vhostname = NULL;
     const char *tftp_server_name = NULL;
@@ -190,7 +191,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     const pcap_hdr_t *hdr = (const void *)data;
     const pcaprec_hdr_t *rec = NULL;
     uint32_t timeout = 0;
-    uint32_t ipsource;
 
     if (size < sizeof(pcap_hdr_t)) {
         return 0;
@@ -239,12 +239,25 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
             break;
         }
 
-        if (rec->incl_len >= 14 + 16) {
-            ipsource = * (uint32_t*) (data + 14 + 12);
+        if (rec->incl_len >= 14) {
+            if (data[12] == 0x08 && data[13] == 0x00) {
+                /* IPv4 */
+                if (rec->incl_len >= 14 + 16) {
+                    uint32_t ipsource = * (uint32_t*) (data + 14 + 12);
 
-            // This an answer, which we will produce, so don't receive
-            if (ipsource == htonl(0x0a000202) || ipsource == htonl(0x0a000203))
-                continue;
+                    // This an answer, which we will produce, so don't receive
+                    if (ipsource == htonl(0x0a000202) || ipsource == htonl(0x0a000203))
+                        continue;
+                }
+            } else if (data[12] == 0x86 && data[13] ==  0xdd) {
+                if (rec->incl_len >= 14 + 24) {
+                    struct in6_addr *ipsource = (struct in6_addr *) (data + 14 + 8);
+
+                    // This an answer, which we will produce, so don't receive
+                    if (in6_equal(ipsource, &ip6_host) || in6_equal(ipsource, &ip6_dns))
+                        continue;
+                }
+            }
         }
 
         slirp_input(slirp, data, rec->incl_len);

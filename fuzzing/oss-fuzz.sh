@@ -35,5 +35,12 @@ zip -jqr $OUT/fuzz-icmp_seed_corpus.zip "$(dirname "$0")/IN_icmp"
 zip -jqr $OUT/fuzz-tcp_seed_corpus.zip "$(dirname "$0")/IN_tcp"
 zip -jqr $OUT/fuzz-tcp-h_seed_corpus.zip "$(dirname "$0")/IN_tcp-h"
 
+zip -jqr $OUT/fuzz-ip6-header_seed_corpus.zip "$(dirname "$0")/IN_ip6-header"
+zip -jqr $OUT/fuzz-udp6_seed_corpus.zip "$(dirname "$0")/IN_udp6"
+zip -jqr $OUT/fuzz-udp6-h_seed_corpus.zip "$(dirname "$0")/IN_udp6-h"
+zip -jqr $OUT/fuzz-tftp6_seed_corpus.zip "$(dirname "$0")/IN_tftp6"
+zip -jqr $OUT/fuzz-icmp6_seed_corpus.zip "$(dirname "$0")/IN_icmp6"
+zip -jqr $OUT/fuzz-tcp6_seed_corpus.zip "$(dirname "$0")/IN_tcp6"
+
 find $build -type f -executable -name "fuzz-*" -exec mv {} $OUT \;
 find $build -type f -name "*.options" -exec mv {} $OUT \;

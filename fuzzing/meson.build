@@ -29,6 +29,16 @@ exes = [['fuzz-ip-header', ['slirp_fuzz_ip_header.c', 'helper.c']],
         ['fuzz-tcp-h', ['slirp_fuzz_tcp_header.c', 'helper.c']],
         ['fuzz-tcp-d', ['slirp_fuzz_tcp_data.c', 'helper.c']],
         ['fuzz-icmp', ['slirp_fuzz_icmp.c', 'helper.c']],
+
+        ['fuzz-ip6-header', ['slirp_fuzz_ip6_header.c', 'helper.c']],
+        ['fuzz-udp6', ['slirp_fuzz_udp6.c', 'helper.c']],
+        ['fuzz-udp6-h', ['slirp_fuzz_udp6_header.c', 'helper.c']],
+        ['fuzz-udp6-d', ['slirp_fuzz_udp6_data.c', 'helper.c']],
+        ['fuzz-tftp6', ['slirp_fuzz_udp6_data.c', 'helper.c']],
+        ['fuzz-tcp6', ['slirp_fuzz_tcp6.c', 'helper.c']],
+        ['fuzz-tcp6-h', ['slirp_fuzz_tcp6_header.c', 'helper.c']],
+        ['fuzz-tcp6-d', ['slirp_fuzz_tcp6_data.c', 'helper.c']],
+        ['fuzz-icmp6', ['slirp_fuzz_icmp6.c', 'helper.c']],
         ]
 
 if fuzzer_build

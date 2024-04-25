@@ -14,7 +14,11 @@
 #include <netinet/in.h>
 
 #define PSEUDO_IP_SIZE (4*2 + 4)
+#define PSEUDO_IPV6_SIZE (16*2 + 4)
 
 uint16_t compute_checksum(uint8_t *Data, size_t Size);
+
+extern struct in6_addr ip6_host;
+extern struct in6_addr ip6_dns;
 
 #endif /* _HELPER_H */

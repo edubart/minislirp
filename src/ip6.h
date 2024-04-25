@@ -10,6 +10,8 @@
 #include <glib.h>
 #include <string.h>
 
+#include "util.h"
+
 #define ALLNODES_MULTICAST \
     {                      \
         .s6_addr = {       \
