@@ -26,6 +26,7 @@ meson $build \
 
 ninja -C $build
 
+zip -jqr $OUT/fuzz-arp_seed_corpus.zip "$(dirname "$0")/IN_arp"
 zip -jqr $OUT/fuzz-ip-header_seed_corpus.zip "$(dirname "$0")/IN_ip-header"
 zip -jqr $OUT/fuzz-udp_seed_corpus.zip "$(dirname "$0")/IN_udp"
 zip -jqr $OUT/fuzz-udp-h_seed_corpus.zip "$(dirname "$0")/IN_udp-h"
@@ -35,6 +36,7 @@ zip -jqr $OUT/fuzz-icmp_seed_corpus.zip "$(dirname "$0")/IN_icmp"
 zip -jqr $OUT/fuzz-tcp_seed_corpus.zip "$(dirname "$0")/IN_tcp"
 zip -jqr $OUT/fuzz-tcp-h_seed_corpus.zip "$(dirname "$0")/IN_tcp-h"
 
+zip -jqr $OUT/fuzz-ndp_seed_corpus.zip "$(dirname "$0")/IN_ndp"
 zip -jqr $OUT/fuzz-ip6-header_seed_corpus.zip "$(dirname "$0")/IN_ip6-header"
 zip -jqr $OUT/fuzz-udp6_seed_corpus.zip "$(dirname "$0")/IN_udp6"
 zip -jqr $OUT/fuzz-udp6-h_seed_corpus.zip "$(dirname "$0")/IN_udp6-h"

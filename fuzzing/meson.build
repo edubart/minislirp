@@ -19,7 +19,9 @@ endif
 
 deps = [glib_dep, libslirp_dep, platform_deps]
 
-exes = [['fuzz-ip-header', ['slirp_fuzz_ip_header.c', 'helper.c']],
+exes = [
+        ['fuzz-arp', ['slirp_fuzz_arp.c', 'helper.c']],
+        ['fuzz-ip-header', ['slirp_fuzz_ip_header.c', 'helper.c']],
         ['fuzz-udp', ['slirp_fuzz_udp.c', 'helper.c']],
         ['fuzz-udp-h', ['slirp_fuzz_udp_header.c', 'helper.c']],
         ['fuzz-udp-d', ['slirp_fuzz_udp_data.c', 'helper.c']],
@@ -30,6 +32,7 @@ exes = [['fuzz-ip-header', ['slirp_fuzz_ip_header.c', 'helper.c']],
         ['fuzz-tcp-d', ['slirp_fuzz_tcp_data.c', 'helper.c']],
         ['fuzz-icmp', ['slirp_fuzz_icmp.c', 'helper.c']],
 
+        ['fuzz-ndp', ['slirp_fuzz_icmp6.c', 'helper.c']],
         ['fuzz-ip6-header', ['slirp_fuzz_ip6_header.c', 'helper.c']],
         ['fuzz-udp6', ['slirp_fuzz_udp6.c', 'helper.c']],
         ['fuzz-udp6-h', ['slirp_fuzz_udp6_header.c', 'helper.c']],
@@ -39,7 +42,7 @@ exes = [['fuzz-ip-header', ['slirp_fuzz_ip_header.c', 'helper.c']],
         ['fuzz-tcp6-h', ['slirp_fuzz_tcp6_header.c', 'helper.c']],
         ['fuzz-tcp6-d', ['slirp_fuzz_tcp6_data.c', 'helper.c']],
         ['fuzz-icmp6', ['slirp_fuzz_icmp6.c', 'helper.c']],
-        ]
+      ]
 
 if fuzzer_build
   foreach exe : exes
