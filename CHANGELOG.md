@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.8.0] - TODO
 
+## Security
+
+  - tcp: Fix testing for last fragment
+  - tftp: Fix use-after-free
+
 ### Added
 
   - Add support for Haiku !123
@@ -24,8 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - dns: Reject domain-search when any entry ends with ".."
   - dns: Use localhost as dns when /etc/resolv.conf empty !130
   - icmp: Handle ICMP packets as IPPROTO_IP on BSD !133
-  - tcp: Fix testing for last fragment
-  - tftp: Fix use-after-free
   - eth: pad ethernet frames to 60 bytes #34
 
 ### Removed
