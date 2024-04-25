@@ -739,6 +739,7 @@ void slirp_cleanup(Slirp *slirp)
     ip_cleanup(slirp);
     ip6_cleanup(slirp);
     m_cleanup(slirp);
+    tftp_cleanup(slirp);
 
     g_rand_free(slirp->grand);
 
