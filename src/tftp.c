@@ -248,11 +248,11 @@ static void tftp_send_next_block(struct tftp_session *spt,
                              spt->block_size);
 
     if (nobytes < 0) {
-        m_free(m);
-
         /* send "file not found" error back */
 
         tftp_send_error(spt, 1, "File not found", tp);
+
+        m_free(m);
 
         return;
     }
