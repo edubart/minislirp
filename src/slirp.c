@@ -1618,7 +1618,17 @@ void slirp_socket_recv(Slirp *slirp, struct in_addr guest_addr, int guest_port,
 
 void slirp_send_packet_all(Slirp *slirp, const void *buf, size_t len)
 {
-    slirp_ssize_t ret = slirp->cb->send_packet(buf, len, slirp->opaque);
+    slirp_ssize_t ret;
+
+    if (len < ETH_MINLEN) {
+        char tmp[ETH_MINLEN];
+        memcpy(tmp, buf, len);
+        memset(tmp + len, 0, ETH_MINLEN - len);
+
+        ret = slirp->cb->send_packet(tmp, ETH_MINLEN, slirp->opaque);
+    } else {
+        ret = slirp->cb->send_packet(buf, len, slirp->opaque);
+    }
 
     if (ret < 0) {
         g_critical("Failed to send packet, ret: %ld", (long)ret);
