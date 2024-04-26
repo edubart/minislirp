@@ -1095,7 +1095,10 @@ void slirp_pollfds_poll(Slirp *slirp, int select_error,
 
             if (so->s != -1 &&
                 (revents & (SLIRP_POLL_IN | SLIRP_POLL_HUP | SLIRP_POLL_ERR))) {
-                icmp_receive(so);
+                if (so->so_type == IPPROTO_IPV6 || so->so_type == IPPROTO_ICMPV6)
+                    icmp6_receive(so);
+                else
+                    icmp_receive(so);
             }
         }
     }

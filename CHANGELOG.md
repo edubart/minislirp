@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ncsi: Add Get Version ID command !122
   - ncsi: Add out-of-band ethernet address !125
   - ncsi: Add Mellanox Get Mac Address handler !125
+  - icmp6: Add echo request forwarding support
   - Add fuzzing infrastructure
 
 ### Fixed
