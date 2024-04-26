@@ -65,10 +65,7 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
 
         // Exclude packets that are not TCP from the mutation strategy
         if (ip_data[6] != IPPROTO_TCP)
-        {
-            fprintf(stderr,"wat\n");
             continue;
-        }
 
         // Allocate a bit more than needed, this is useful for
         // checksum calculation.
