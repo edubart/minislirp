@@ -64,10 +64,12 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
         }
 
         // Exclude packets that are not ICMP from the mutation strategy
-        if (ip_data[9] != IPPROTO_ICMPV6)
+        if (ip_data[6] != IPPROTO_ICMPV6)
             continue;
 
-        uint8_t Data_to_mutate[MaxSize];
+        // Allocate a bit more than needed, this is useful for
+        // checksum calculation.
+        uint8_t Data_to_mutate[MaxSize + PSEUDO_IPV6_SIZE];
         uint8_t ip_hl_in_bytes = sizeof(struct ip6); /* ip header length */
 
         // Fixme : don't use ip_hl_in_bytes inside the fuzzing code, maybe use the
@@ -87,7 +89,7 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
 
         // Copy interesting data to the `Data_to_mutate` array
         // here we want to fuzz everything in icmp
-        memset(Data_to_mutate, 0, MaxSize);
+        memset(Data_to_mutate, 0, MaxSize + PSEUDO_IPV6_SIZE);
         memcpy(Data_to_mutate, start_of_icmp, icmp_size);
 
         // Call to libfuzzer's mutation function.
@@ -104,8 +106,18 @@ extern size_t LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size,
 
         // Set the `checksum` field to 0 and calculate the new checksum
         *(uint16_t *)(Data_to_mutate + 2) = 0;
+        // Copy the source and destination IP addresses, the tcp length and
+        // protocol number at the end of the `Data_to_mutate` array to calculate
+        // the new checksum.
+        memcpy(Data_to_mutate + icmp_size, ip_data + 8, 16*2);
+
+        *(Data_to_mutate + icmp_size + 16*2 + 1) = IPPROTO_ICMPV6;
+
+        *(Data_to_mutate + icmp_size + 16*2 + 2) = (uint8_t)(icmp_size / 256);
+        *(Data_to_mutate + icmp_size + 16*2 + 3) = (uint8_t)(icmp_size % 256);
+
         uint16_t new_checksum =
-            compute_checksum(Data_to_mutate, icmp_size);
+            compute_checksum(Data_to_mutate, icmp_size + PSEUDO_IPV6_SIZE);
         *(uint16_t *)(Data_to_mutate + 2) = htons(new_checksum);
 
         // Copy the mutated data back to the `Data` array
