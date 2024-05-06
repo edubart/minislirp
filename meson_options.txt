@@ -11,4 +11,4 @@ option('fuzz-reproduce', type : 'boolean', value : 'false',
        description : 'build a standalone executable to reproduce fuzz cases')
 
 option('static', type : 'boolean', value : 'false',
-       description : 'build static binary')
+       description : 'build static binary, only for debugging, otherwise rather use --default-library static')
