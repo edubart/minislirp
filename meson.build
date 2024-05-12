@@ -143,8 +143,8 @@ sources = [
 
 mapfile = 'src/libslirp.map'
 vflag = []
-vflag_test = '-Wl,--version-script,@0@/@1@'.format(meson.current_source_dir(), 'src/libslirp.test.map')
-if cc.has_link_argument(vflag_test)
+vflag_test = '-Wl,--version-script,@0@/@1@'.format(meson.current_source_dir(), mapfile)
+if cc.has_link_argument('-Wl,--version-script,@0@/@1@'.format(meson.current_source_dir(), 'src/libslirp.test.map'))
   vflag += vflag_test
 endif
 
