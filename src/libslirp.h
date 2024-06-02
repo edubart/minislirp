@@ -12,7 +12,9 @@
 #include <in6addr.h>
 #include <basetsd.h>
 typedef SSIZE_T slirp_ssize_t;
-#ifdef BUILDING_LIBSLIRP
+#ifdef LIBSLIRP_STATIC
+# define SLIRP_EXPORT
+#elif defined(BUILDING_LIBSLIRP)
 # define SLIRP_EXPORT __declspec(dllexport)
 #else
 # define SLIRP_EXPORT __declspec(dllimport)
