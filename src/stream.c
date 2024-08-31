@@ -23,7 +23,7 @@
  * THE SOFTWARE.
  */
 #include "stream.h"
-#include <glib.h>
+#include "tinyglib.h"
 
 bool slirp_istream_read(SlirpIStream *f, void *buf, size_t size)
 {

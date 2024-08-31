@@ -7,7 +7,7 @@
 #ifndef SLIRP_IP6_H
 #define SLIRP_IP6_H
 
-#include <glib.h>
+#include "tinyglib.h"
 #include <string.h>
 
 #include "util.h"

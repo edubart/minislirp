@@ -28,7 +28,7 @@
  */
 #include "util.h"
 
-#include <glib.h>
+#include "tinyglib.h"
 #include <fcntl.h>
 #include <stdint.h>
 

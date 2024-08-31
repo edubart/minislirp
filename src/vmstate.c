@@ -40,7 +40,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
-#include <glib.h>
+#include "tinyglib.h"
 
 #include "stream.h"
 #include "vmstate.h"

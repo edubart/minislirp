@@ -34,7 +34,7 @@
 #ifndef IP_H
 #define IP_H
 
-#include <glib.h>
+#include "tinyglib.h"
 
 #if G_BYTE_ORDER == G_BIG_ENDIAN
 #undef NTOHL

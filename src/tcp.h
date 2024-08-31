@@ -34,7 +34,7 @@
 #ifndef TCP_H
 #define TCP_H
 
-#include <glib.h>
+#include "tinyglib.h"
 
 typedef uint32_t tcp_seq;
 
