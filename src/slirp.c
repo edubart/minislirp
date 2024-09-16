@@ -812,7 +812,7 @@ void slirp_pollfds_fill(Slirp *slirp, uint32_t *timeout,
          * NOFDREF can include still connecting to local-host,
          * newly socreated() sockets etc. Don't want to select these.
          */
-        if (so->so_state & SS_NOFDREF || so->s == -1) {
+        if (so->so_state & SS_NOFDREF || not_valid_socket(so->s)) {
             continue;
         }
 
@@ -931,7 +931,7 @@ void slirp_pollfds_poll(Slirp *slirp, int select_error,
     struct socket *so, *so_next;
     int ret;
 
-    curtime = slirp->cb->clock_get_ns(slirp->opaque) / SCALE_MS;
+    curtime = (unsigned int) (slirp->cb->clock_get_ns(slirp->opaque) / SCALE_MS);
 
     /*
      * See if anything has timed out
@@ -965,7 +965,7 @@ void slirp_pollfds_poll(Slirp *slirp, int select_error,
                 revents = get_revents(so->pollfds_idx, opaque);
             }
 
-            if (so->so_state & SS_NOFDREF || so->s == -1) {
+            if (so->so_state & SS_NOFDREF || not_valid_socket(so->s)) {
                 continue;
             }
 
@@ -1074,7 +1074,7 @@ void slirp_pollfds_poll(Slirp *slirp, int select_error,
                 revents = get_revents(so->pollfds_idx, opaque);
             }
 
-            if (so->s != -1 &&
+            if (have_valid_socket(so->s) &&
                 (revents & (SLIRP_POLL_IN | SLIRP_POLL_HUP | SLIRP_POLL_ERR))) {
                 sorecvfrom(so);
             }
@@ -1093,7 +1093,7 @@ void slirp_pollfds_poll(Slirp *slirp, int select_error,
                 revents = get_revents(so->pollfds_idx, opaque);
             }
 
-            if (so->s != -1 &&
+            if (have_valid_socket(so->s) &&
                 (revents & (SLIRP_POLL_IN | SLIRP_POLL_HUP | SLIRP_POLL_ERR))) {
                 if (so->so_type == IPPROTO_IPV6 || so->so_type == IPPROTO_ICMPV6)
                     icmp6_receive(so);
@@ -1547,14 +1547,14 @@ int slirp_remove_guestfwd(Slirp *slirp, struct in_addr guest_addr,
 
 slirp_ssize_t slirp_send(struct socket *so, const void *buf, size_t len, int flags)
 {
-    if (so->s == -1 && so->guestfwd) {
+    if (not_valid_socket(so->s) && so->guestfwd) {
         /* XXX this blocks entire thread. Rewrite to use
          * qemu_chr_fe_write and background I/O callbacks */
         so->guestfwd->write_cb(buf, len, so->guestfwd->opaque);
         return len;
     }
 
-    if (so->s == -1) {
+    if (not_valid_socket(so->s)) {
         /*
          * This should in theory not happen but it is hard to be
          * sure because some code paths will end up with so->s == -1

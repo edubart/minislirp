@@ -178,7 +178,7 @@ void udp_input(register struct mbuf *m, int iphlen)
          * create one
          */
         so = socreate(slirp, IPPROTO_UDP);
-        if (udp_attach(so, AF_INET) == -1) {
+        if (not_valid_socket(udp_attach(so, AF_INET))) {
             DEBUG_MISC(" udp_attach errno = %d-%s", errno, strerror(errno));
             sofree(so);
             goto bad;
@@ -220,7 +220,7 @@ void udp_input(register struct mbuf *m, int iphlen)
         icmp_send_error(m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, 0, NULL);
         goto bad;
     }
-    setsockopt(so->s, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
+    setsockopt(so->s, IPPROTO_IP, IP_TTL, (const void *) &ttl, sizeof(ttl));
 
     /*
      * Now we sendto() the packet.
@@ -247,8 +247,8 @@ bad:
     m_free(m);
 }
 
-int udp_output(struct socket *so, struct mbuf *m, struct sockaddr_in *saddr,
-               struct sockaddr_in *daddr, int iptos)
+int udp_output(struct socket *so, struct mbuf *m, const struct sockaddr_in *saddr,
+               const struct sockaddr_in *daddr, int iptos)
 {
     Slirp *slirp = m->slirp;
     char addr[INET_ADDRSTRLEN];
@@ -303,15 +303,15 @@ int udp_output(struct socket *so, struct mbuf *m, struct sockaddr_in *saddr,
     return (error);
 }
 
-int udp_attach(struct socket *so, unsigned short af)
+slirp_os_socket udp_attach(struct socket *so, unsigned short af)
 {
     so->s = slirp_socket(af, SOCK_DGRAM, 0);
-    if (so->s != -1) {
+    if (have_valid_socket(so->s)) {
         if (slirp_bind_outbound(so, af) != 0) {
             // bind failed - close socket
             closesocket(so->s);
-            so->s = -1;
-            return -1;
+            so->s = SLIRP_INVALID_SOCKET;
+            return SLIRP_INVALID_SOCKET;
         }
 
 #ifdef __linux__
@@ -375,7 +375,7 @@ struct socket *udpx_listen(Slirp *slirp,
 
     so = socreate(slirp, IPPROTO_UDP);
     so->s = slirp_socket(haddr->sa_family, SOCK_DGRAM, 0);
-    if (so->s < 0) {
+    if (not_valid_socket(so->s)) {
         save_errno = errno;
         sofree(so);
         errno = save_errno;

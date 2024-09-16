@@ -8,9 +8,12 @@
 
 #ifdef _WIN32
 #include <winsock2.h>
+#include <windows.h>
 #include <ws2tcpip.h>
 #include <in6addr.h>
 #include <basetsd.h>
+#include <errno.h>
+
 typedef SSIZE_T slirp_ssize_t;
 #ifdef LIBSLIRP_STATIC
 # define SLIRP_EXPORT
@@ -33,6 +36,28 @@ typedef ssize_t slirp_ssize_t;
 extern "C" {
 #endif
 
+/* Socket abstraction:*/
+
+#if !defined(_WIN32)
+/* Traditional Unix socket. */
+typedef int slirp_os_socket;
+#define SLIRP_INVALID_SOCKET (-1)
+#define SLIRP_PRIfd "d"
+#else
+/* Windows: Win64 is a LLP64 platform, sizeof(int) < sizeof(long long) == sizeof(void *).
+ *
+ * Windows likes to pass HANDLE types around, which are pointers (aka unsigned long longs),
+ * which cannot be represented as ints. And, MS, in its infinite wisdom, decided to use
+ * a SOCKET handle instead of an int for socket library calls. */
+typedef SOCKET slirp_os_socket;
+#define SLIRP_INVALID_SOCKET INVALID_SOCKET
+#if defined(_WIN64)
+# define SLIRP_PRIfd "llx"
+#else
+# define SLIRP_PRIfd "x"
+#endif
+#endif
+
 /* Opaque structure containing the slirp state */
 typedef struct Slirp Slirp;
 
@@ -52,7 +77,7 @@ typedef slirp_ssize_t (*SlirpWriteCb)(const void *buf, size_t len, void *opaque)
 /* Timer callback */
 typedef void (*SlirpTimerCb)(void *opaque);
 /* Callback for libslirp to register polling callbacks */
-typedef int (*SlirpAddPollCb)(int fd, int events, void *opaque);
+typedef int (*SlirpAddPollCb)(slirp_os_socket fd, int events, void *opaque);
 /* Callback for libslirp to get polling result */
 typedef int (*SlirpGetREventsCb)(int idx, void *opaque);
 
@@ -89,9 +114,9 @@ typedef struct SlirpCb {
     /* Modify a timer to expire at @expire_time (ms) */
     void (*timer_mod)(void *timer, int64_t expire_time, void *opaque);
     /* Register a fd for future polling */
-    void (*register_poll_fd)(int fd, void *opaque);
+    void (*register_poll_fd)(slirp_os_socket fd, void *opaque);
     /* Unregister a fd */
-    void (*unregister_poll_fd)(int fd, void *opaque);
+    void (*unregister_poll_fd)(slirp_os_socket fd, void *opaque);
     /* Kick the io-thread, to signal that new events may be processed because some TCP buffer
      * can now receive more data, i.e. slirp_socket_can_recv will return 1. */
     void (*notify)(void *opaque);
@@ -336,6 +361,15 @@ int slirp_state_load(Slirp *s, int version_id, SlirpReadCb read_cb,
 /* Return the version of the slirp implementation */
 SLIRP_EXPORT
 const char *slirp_version_string(void);
+
+#if defined(_WIN32)
+/* Windows utility functions: */
+
+/* inet_aton() replacement that uses inet_pton(). Eliminates the dreaded
+ * winsock2 deprecation messages. */
+SLIRP_EXPORT
+int slirp_inet_aton(const char *cp, struct in_addr *ia);
+#endif
 
 #ifdef __cplusplus
 } /* extern "C" */

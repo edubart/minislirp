@@ -3,11 +3,19 @@
 #define SLIRP_H
 
 #ifdef _WIN32
-
-/* as defined in sdkddkver.h */
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0601 /* Windows 7 */
+/* TARGET_WINVER defined on the compiler command line? */
+#if defined(TARGET_WINVER) && !defined(WINVER)
+#  define WINVER TARGET_WINVER
+/* Default WINVER to Windows 7 API, same as glib. */
+#elif !defined(WINVER)
+#  define WINVER 0x0601
 #endif
+
+/* Ensure that _WIN32_WINNT matches WINVER */
+#if defined(WINVER) && !defined(_WIN32_WINNT)
+#define _WIN32_WINNT WINVER
+#endif
+
 /* reduces the number of implicitly included headers */
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -18,6 +26,11 @@
 #include <ws2tcpip.h>
 #include <sys/timeb.h>
 #include <iphlpapi.h>
+
+/* Paranoia includes: */
+#include <errno.h>
+#include <stdbool.h>
+#include <io.h>
 
 #else
 #define O_BINARY 0
