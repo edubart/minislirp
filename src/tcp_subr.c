@@ -383,7 +383,7 @@ int tcp_fconnect(struct socket *so, unsigned short af)
 
     so->s = slirp_socket(af, SOCK_STREAM, 0);
     ret = have_valid_socket(so->s) ? 0 : -1;
-    if (ret) {
+    if (ret == 0) {
         ret = slirp_bind_outbound(so, af);
         if (ret < 0) {
             // bind failed - close socket
