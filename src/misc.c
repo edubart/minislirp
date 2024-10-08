@@ -251,7 +251,7 @@ int fork_exec(struct socket *so, const char *ex)
     opt = 1;
     setsockopt(so->s, SOL_SOCKET, SO_OOBINLINE, (const void *) &opt, sizeof(int));
     slirp_set_nonblock(so->s);
-    so->slirp->cb->register_poll_fd(so->s, so->slirp->opaque);
+    slirp_register_poll_socket(so);
     return 1;
 }
 
@@ -286,7 +286,7 @@ int open_unix(struct socket *so, const char *unixpath)
 
     so->s = s;
     slirp_set_nonblock(so->s);
-    so->slirp->cb->register_poll_fd(so->s, so->slirp->opaque);
+    slirp_register_poll_socket(so);
 
     return 1;
 #else

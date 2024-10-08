@@ -24,6 +24,10 @@
  */
 #include "slirp.h"
 
+#ifndef g_warning_once
+#define g_warning_once g_warning
+#endif
+
 
 #ifndef _WIN32
 #include <net/if.h>
@@ -778,8 +782,8 @@ static void slirp_update_timeout(Slirp *slirp, uint32_t *timeout)
     *timeout = t;
 }
 
-void slirp_pollfds_fill(Slirp *slirp, uint32_t *timeout,
-                        SlirpAddPollCb add_poll, void *opaque)
+void slirp_pollfds_fill_socket(Slirp *slirp, uint32_t *timeout,
+                               SlirpAddPollSocketCb add_poll, void *opaque)
 {
     struct socket *so, *so_next;
 
@@ -923,6 +927,70 @@ void slirp_pollfds_fill(Slirp *slirp, uint32_t *timeout,
     }
 
     slirp_update_timeout(slirp, timeout);
+}
+
+struct PollCbWrap {
+    SlirpAddPollCb add_poll;
+    void *opaque;
+};
+
+static int slirp_pollfds_fill_wrap(slirp_os_socket socket, int events, void *opaque)
+{
+    struct PollCbWrap *wrap = opaque;
+    int fd = (int) socket;
+    if ((slirp_os_socket) fd != socket)
+        g_warning_once("Truncating socket to int failed!");
+    return wrap->add_poll(fd, events, wrap->opaque);
+}
+
+void slirp_pollfds_fill(Slirp *slirp, uint32_t *timeout,
+                        SlirpAddPollCb add_poll, void *opaque)
+{
+    struct PollCbWrap wrap = {
+        .add_poll = add_poll,
+        .opaque = opaque,
+    };
+    slirp_pollfds_fill_socket(slirp, timeout, slirp_pollfds_fill_wrap, &wrap);
+}
+
+void slirp_register_poll_socket(struct socket *so)
+{
+    Slirp *slirp = so->slirp;
+    int fd;
+    if (slirp->cfg_version >= 6 && slirp->cb->register_poll_socket)
+        return slirp->cb->register_poll_socket(so->s, slirp->opaque);
+
+    fd = (int) so->s;
+    if ((slirp_os_socket) fd != so->s)
+        g_warning_once("Truncating socket to int failed!");
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    return slirp->cb->register_poll_fd(fd, slirp->opaque);
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+}
+
+void slirp_unregister_poll_socket(struct socket *so)
+{
+    Slirp *slirp = so->slirp;
+    int fd;
+    if (slirp->cfg_version >= 6 && slirp->cb->unregister_poll_socket)
+        return slirp->cb->unregister_poll_socket(so->s, slirp->opaque);
+
+    fd = (int) so->s;
+    if ((slirp_os_socket) fd != so->s)
+        g_warning_once("Truncating socket to int failed!");
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    return slirp->cb->unregister_poll_fd(fd, slirp->opaque);
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 }
 
 void slirp_pollfds_poll(Slirp *slirp, int select_error,
@@ -1367,7 +1435,7 @@ int slirp_remove_hostfwd(Slirp *slirp, int is_udp, struct in_addr host_addr,
             addr.sin_family == AF_INET &&
             addr.sin_addr.s_addr == host_addr.s_addr &&
             addr.sin_port == port) {
-            so->slirp->cb->unregister_poll_fd(so->s, so->slirp->opaque);
+            slirp_unregister_poll_socket(so);
             closesocket(so->s);
             sofree(so);
             return 0;
@@ -1409,7 +1477,7 @@ int slirp_remove_hostxfwd(Slirp *slirp,
         if ((so->so_state & SS_HOSTFWD) &&
             getsockname(so->s, (struct sockaddr *)&addr, &addr_len) == 0 &&
             sockaddr_equal(&addr, (const struct sockaddr_storage *) haddr)) {
-            so->slirp->cb->unregister_poll_fd(so->s, so->slirp->opaque);
+            slirp_unregister_poll_socket(so);
             closesocket(so->s);
             sofree(so);
             return 0;

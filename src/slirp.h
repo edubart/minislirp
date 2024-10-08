@@ -396,4 +396,10 @@ void slirp_send_packet_all(Slirp *slirp, const void *buf, size_t len);
 /* Create a new timer, i.e. call the application timer_new callback */
 void *slirp_timer_new(Slirp *slirp, SlirpTimerId id, void *cb_opaque);
 
+/* Call slirp->cb->register_poll_socket (or register_poll_fd for compatibility) */
+void slirp_register_poll_socket(struct socket *so);
+
+/* Call slirp->cb->unregister_poll_socket (or unregister_poll_fd for compatibility) */
+void slirp_unregister_poll_socket(struct socket *so);
+
 #endif

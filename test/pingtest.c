@@ -260,12 +260,12 @@ static uint32_t timer_timeout(void) {
  * Dumb polling implementation
  */
 static int npoll;
-static void register_poll_fd(slirp_os_socket fd, void *opaque) {
+static void register_poll_socket(slirp_os_socket fd, void *opaque) {
     /* We might want to prepare for polling on fd */
     npoll++;
 }
 
-static void unregister_poll_fd(slirp_os_socket fd, void *opaque) {
+static void unregister_poll_socket(slirp_os_socket fd, void *opaque) {
     /* We might want to clear polling on fd */
     npoll--;
 }
@@ -310,7 +310,7 @@ static void dopoll(uint32_t timeout) {
     FD_ZERO(&exceptfds);
     maxfd = 0;
 
-    slirp_pollfds_fill(slirp, &timeout, add_poll_cb, NULL);
+    slirp_pollfds_fill_socket(slirp, &timeout, add_poll_cb, NULL);
     printf("we will use timeout %u\n", (unsigned) timeout);
 
     struct timeval tv = {
@@ -353,7 +353,7 @@ static void dopoll(uint32_t timeout) {
     fds = malloc(sizeof(*fds) * npoll);
     cur_poll = 0;
 
-    slirp_pollfds_fill(slirp, &timeout, add_poll_cb, NULL);
+    slirp_pollfds_fill_socket(slirp, &timeout, add_poll_cb, NULL);
     printf("we will use timeout %u\n", (unsigned) timeout);
 
     err = poll(fds, cur_poll, timeout);
@@ -372,8 +372,8 @@ static struct SlirpCb callbacks = {
     .timer_new_opaque = timer_new_opaque,
     .timer_free = timer_free,
     .timer_mod = timer_mod,
-    .register_poll_fd = register_poll_fd,
-    .unregister_poll_fd = unregister_poll_fd,
+    .register_poll_socket = register_poll_socket,
+    .unregister_poll_socket = unregister_poll_socket,
     .notify = notify,
 };
 

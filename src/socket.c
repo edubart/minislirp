@@ -887,7 +887,7 @@ struct socket *tcpx_listen(Slirp *slirp,
     sotranslate_accept(so);
 
     so->s = s;
-    so->slirp->cb->register_poll_fd(so->s, so->slirp->opaque);
+    slirp_register_poll_socket(so);
 
     return so;
 }
