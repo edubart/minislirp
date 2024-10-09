@@ -3,11 +3,19 @@
 #define SLIRP_H
 
 #ifdef _WIN32
-
-/* as defined in sdkddkver.h */
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0601 /* Windows 7 */
+/* TARGET_WINVER defined on the compiler command line? */
+#if defined(TARGET_WINVER) && !defined(WINVER)
+#  define WINVER TARGET_WINVER
+/* Default WINVER to Windows 7 API, same as glib. */
+#elif !defined(WINVER)
+#  define WINVER 0x0601
 #endif
+
+/* Ensure that _WIN32_WINNT matches WINVER */
+#if defined(WINVER) && !defined(_WIN32_WINNT)
+#define _WIN32_WINNT WINVER
+#endif
+
 /* reduces the number of implicitly included headers */
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -18,6 +26,11 @@
 #include <ws2tcpip.h>
 #include <sys/timeb.h>
 #include <iphlpapi.h>
+
+/* Paranoia includes: */
+#include <errno.h>
+#include <stdbool.h>
+#include <io.h>
 
 #else
 #define O_BINARY 0
@@ -382,5 +395,11 @@ void slirp_send_packet_all(Slirp *slirp, const void *buf, size_t len);
 
 /* Create a new timer, i.e. call the application timer_new callback */
 void *slirp_timer_new(Slirp *slirp, SlirpTimerId id, void *cb_opaque);
+
+/* Call slirp->cb->register_poll_socket (or register_poll_fd for compatibility) */
+void slirp_register_poll_socket(struct socket *so);
+
+/* Call slirp->cb->unregister_poll_socket (or unregister_poll_fd for compatibility) */
+void slirp_unregister_poll_socket(struct socket *so);
 
 #endif

@@ -62,7 +62,7 @@ static int icmp6_send(struct socket *so, struct mbuf *m, int hlen)
 #endif
 
     so->s = slirp_socket(AF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6);
-    if (so->s == -1) {
+    if (not_valid_socket(so->s)) {
         if (errno == EAFNOSUPPORT
          || errno == EPROTONOSUPPORT
          || errno == EACCES) {
@@ -71,10 +71,10 @@ static int icmp6_send(struct socket *so, struct mbuf *m, int hlen)
             so->s = slirp_socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
         }
     }
-    if (so->s == -1) {
+    if (not_valid_socket(so->s)) {
         return -1;
     }
-    so->slirp->cb->register_poll_fd(so->s, so->slirp->opaque);
+    slirp_register_poll_socket(so);
 
     if (slirp_bind_outbound(so, AF_INET6) != 0) {
         // bind failed - close socket
